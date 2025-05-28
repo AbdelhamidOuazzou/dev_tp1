@@ -1,0 +1,104 @@
+{% extends 'catalogue/base.html' %}
+
+{% block title %}Tableau de Bord{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Tableau de Bord</h1>
+        <a href="{% url 'catalogue' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Retour à l'accueil
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Destinations Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-map-marker-alt text-primary"></i> Destinations
+                    </h5>
+                    <p class="card-text">Gérer les destinations de voyage</p>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'sub_admin_destination_list' %}" class="btn btn-primary">
+                            <i class="fas fa-list"></i> Voir tout
+                        </a>
+                        <a href="{% url 'sub_admin_destination_create' %}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Ajouter
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Circuits Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-route text-success"></i> Circuits
+                    </h5>
+                    <p class="card-text">Gérer les circuits de voyage</p>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'sub_admin_circuit_list' %}" class="btn btn-primary">
+                            <i class="fas fa-list"></i> Voir tout
+                        </a>
+                        <a href="{% url 'sub_admin_circuit_create' %}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Ajouter
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Options Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-plus-circle text-info"></i> Options
+                    </h5>
+                    <p class="card-text">Gérer les options supplémentaires</p>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'sub_admin_option_list' %}" class="btn btn-primary">
+                            <i class="fas fa-list"></i> Voir tout
+                        </a>
+                        <a href="{% url 'sub_admin_option_create' %}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Ajouter
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Destinations</h5>
+                    <p class="display-4 text-primary">{{ destinations.count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Circuits</h5>
+                    <p class="display-4 text-success">{{ circuits.count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Options</h5>
+                    <p class="display-4 text-info">{{ options.count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

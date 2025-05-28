@@ -1,0 +1,116 @@
+{% extends 'catalogue/admin/base.html' %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">
+            {% if circuit %}
+                Modifier le Circuit
+            {% else %}
+                Nouveau Circuit
+            {% endif %}
+        </h4>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="{{ form.destination.id_for_label }}" class="form-label">Destination</label>
+                {{ form.destination }}
+                {% if form.destination.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.destination.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.titre.id_for_label }}" class="form-label">Titre</label>
+                {{ form.titre }}
+                {% if form.titre.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.titre.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.description.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.itineraire.id_for_label }}" class="form-label">Itinéraire</label>
+                {{ form.itineraire }}
+                {% if form.itineraire.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.itineraire.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.points_interet.id_for_label }}" class="form-label">Points d'intérêt</label>
+                {{ form.points_interet }}
+                {% if form.points_interet.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.points_interet.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="{{ form.date_depart.id_for_label }}" class="form-label">Date de départ</label>
+                        {{ form.date_depart }}
+                        {% if form.date_depart.errors %}
+                            <div class="alert alert-danger">
+                                {{ form.date_depart.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="{{ form.duree.id_for_label }}" class="form-label">Durée (jours)</label>
+                        {{ form.duree }}
+                        {% if form.duree.errors %}
+                            <div class="alert alert-danger">
+                                {{ form.duree.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="{{ form.prix_base.id_for_label }}" class="form-label">Prix de base</label>
+                        {{ form.prix_base }}
+                        {% if form.prix_base.errors %}
+                            <div class="alert alert-danger">
+                                {{ form.prix_base.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'admin_circuit_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

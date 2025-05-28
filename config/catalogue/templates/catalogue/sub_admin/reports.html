@@ -1,0 +1,802 @@
+{% extends 'catalogue/base.html' %}
+{% load static %}
+
+{% block title %}Rapports et Statistiques{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+:root {
+    --primary-color: #2ECC71;
+    --primary-dark: #27AE60;
+    --primary-light: #82E0AA;
+    --secondary-color: #34495E;
+    --accent-color: #3498DB;
+    --text-dark: #2C3E50;
+    --text-light: #7F8C8D;
+    --background-light: #F8F9FA;
+    --border-color: #E9ECEF;
+    --success-color: #2ECC71;
+    --warning-color: #F1C40F;
+    --danger-color: #E74C3C;
+    --gradient-primary: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+    --gradient-secondary: linear-gradient(135deg, #82E0AA 0%, #2ECC71 100%);
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+}
+
+body {
+    background-color: var(--background-light);
+}
+
+.page-header {
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+}
+
+.page-header h1 {
+    color: var(--text-dark);
+    font-size: 1.75rem;
+    margin: 0;
+    font-weight: 600;
+}
+
+.filter-section {
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+}
+
+.filter-section .form-control {
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+}
+
+.filter-section .btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    transition: transform 0.2s;
+}
+
+.filter-section .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-card {
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    height: 100%;
+    border: 1px solid var(--border-color);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-card .icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.stat-card .value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+    line-height: 1;
+}
+
+.stat-card .label {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.chart-container {
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+    position: relative;
+    height: 400px;
+}
+
+.chart-container h5 {
+    color: var(--text-dark);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    right: 1.5rem;
+    z-index: 1;
+}
+
+.chart-container canvas {
+    position: absolute;
+    top: 5rem;
+    left: 1.5rem;
+    right: 1.5rem;
+    bottom: 1.5rem;
+}
+
+.table-container {
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: var(--background-light);
+    color: var(--text-dark);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.table td {
+    padding: 1rem;
+    vertical-align: middle;
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody tr:hover {
+    background-color: var(--background-light);
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background-color: var(--background-light);
+    margin: 0.5rem 0;
+}
+
+.progress-bar {
+    background: var(--gradient-primary);
+    border-radius: 4px;
+}
+
+.badge {
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+
+.badge-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.badge-warning {
+    background-color: var(--warning-color);
+    color: var(--text-dark);
+}
+
+.badge-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.report-form {
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.report-form .card-header {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    font-weight: 600;
+}
+
+.report-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.report-form label {
+    color: var(--text-dark);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.report-form .form-control {
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+}
+
+.report-form .btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.report-form .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background-light);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-light);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .chart-container {
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+    
+    .chart-container h5 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .chart-container canvas {
+        top: 4rem;
+    }
+    
+    .table-container {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-chart-line me-2"></i>Rapports et Statistiques</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Imprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="filter-section">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="date_from" class="form-label">
+                    <i class="fas fa-calendar-alt me-2"></i>Date de début
+                </label>
+                <input type="date" class="form-control" id="date_from" name="date_from" 
+                       value="{{ date_from|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="date_to" class="form-label">
+                    <i class="fas fa-calendar-alt me-2"></i>Date de fin
+                </label>
+                <input type="date" class="form-control" id="date_to" name="date_to" 
+                       value="{{ date_to|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="value">{{ total_sales|floatformat:2 }} DH</div>
+                <div class="label">Chiffre d'affaires total</div>
+                <div class="trend mt-2">
+                    <small class="text-success">
+                        <i class="fas fa-arrow-up"></i> 12% vs mois dernier
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div class="value">{{ total_reservations }}</div>
+                <div class="label">Réservations totales</div>
+                <div class="trend mt-2">
+                    <small class="text-success">
+                        <i class="fas fa-arrow-up"></i> 8% vs mois dernier
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="value">{{ overall_occupancy_rate|floatformat:1 }}%</div>
+                <div class="label">Taux d'occupation moyen</div>
+                <div class="trend mt-2">
+                    <small class="text-warning">
+                        <i class="fas fa-minus"></i> Stable
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="value">{{ payment_stats.avg_payment_time|default:"0"|floatformat:1 }} jours</div>
+                <div class="label">Délai moyen de paiement</div>
+                <div class="trend mt-2">
+                    <small class="text-danger">
+                        <i class="fas fa-arrow-up"></i> 2 jours vs mois dernier
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Sales by Circuit Chart -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5><i class="fas fa-chart-bar me-2"></i>Ventes par Circuit</h5>
+                <canvas id="salesByCircuitChart"></canvas>
+            </div>
+        </div>
+        <!-- Monthly Sales Chart -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5><i class="fas fa-chart-line me-2"></i>Évolution des Ventes</h5>
+                <canvas id="monthlySalesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Row -->
+    <div class="row">
+        <!-- Top Circuits by Sales -->
+        <div class="col-md-6">
+            <div class="table-container">
+                <h5><i class="fas fa-trophy me-2"></i>Meilleurs Circuits</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Circuit</th>
+                                <th>Ventes</th>
+                                <th>Réservations</th>
+                                <th>Prix Moyen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for circuit in sales_by_circuit|slice:":5" %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="circuit-icon me-2">
+                                            <i class="fas fa-map-marked-alt text-primary"></i>
+                                        </div>
+                                        <div>{{ circuit.circuit__titre }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        {{ circuit.total_sales|floatformat:2 }} DH
+                                    </span>
+                                </td>
+                                <td>{{ circuit.reservation_count }}</td>
+                                <td>{{ circuit.avg_price|floatformat:2 }} DH</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Clients -->
+        <div class="col-md-6">
+            <div class="table-container">
+                <h5><i class="fas fa-users me-2"></i>Top Clients</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Total Dépensé</th>
+                                <th>Réservations</th>
+                                <th>Moyenne</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in client_stats %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="client-icon me-2">
+                                            <i class="fas fa-user text-primary"></i>
+                                        </div>
+                                        <div>{{ client.client__username }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        {{ client.total_spent|floatformat:2 }} DH
+                                    </span>
+                                </td>
+                                <td>{{ client.reservation_count }}</td>
+                                <td>{{ client.avg_spent|floatformat:2 }} DH</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Occupancy Details -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="table-container">
+                <h5><i class="fas fa-chart-pie me-2"></i>Détails d'Occupation par Circuit</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Circuit</th>
+                                <th>Places Totales</th>
+                                <th>Places Réservées</th>
+                                <th>Taux d'Occupation</th>
+                                <th>Progression</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for circuit in occupancy_by_circuit %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="circuit-icon me-2">
+                                            <i class="fas fa-map-marked-alt text-primary"></i>
+                                        </div>
+                                        <div>{{ circuit.circuit__titre }}</div>
+                                    </div>
+                                </td>
+                                <td>{{ circuit.total_places }}</td>
+                                <td>{{ circuit.total_reserved }}</td>
+                                <td>
+                                    <span class="badge {% if circuit.occupancy_rate >= 75 %}bg-success
+                                                      {% elif circuit.occupancy_rate >= 50 %}bg-warning
+                                                      {% else %}bg-danger{% endif %}">
+                                        {{ circuit.occupancy_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                                <td style="width: 30%">
+                                    <div class="progress">
+                                        <div class="progress-bar {% if circuit.occupancy_rate >= 75 %}bg-success
+                                                               {% elif circuit.occupancy_rate >= 50 %}bg-warning
+                                                               {% else %}bg-danger{% endif %}"
+                                             role="progressbar" 
+                                             style="width: {{ circuit.occupancy_rate }}%"
+                                             aria-valuenow="{{ circuit.occupancy_rate }}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Generation Form -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Générer un Nouveau Rapport</h5>
+            <form id="rapport-form" method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="id_type" class="form-label">Type de Rapport</label>
+                        <select name="type" id="id_type" class="form-select" required>
+                            <option value="">Sélectionnez un type...</option>
+                            <option value="ventes">Rapport des Ventes</option>
+                            <option value="occupation">Rapport d'Occupation</option>
+                            <option value="clients">Rapport des Clients</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="id_titre" class="form-label">Titre</label>
+                        <input type="text" name="titre" id="id_titre" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="id_description" class="form-label">Description</label>
+                        <textarea name="description" id="id_description" class="form-control" rows="1"></textarea>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary" id="generate-btn">
+                        <i class="fas fa-file-pdf me-2"></i>Générer le Rapport PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Common chart options
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+                align: 'end',
+                labels: {
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    },
+                    boxWidth: 12,
+                    padding: 15
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                titleFont: {
+                    size: 14,
+                    weight: 'bold'
+                },
+                bodyFont: {
+                    size: 13
+                },
+                callbacks: {
+                    label: function(context) {
+                        return `${context.dataset.label}: ${context.raw.toLocaleString()} DH`;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)',
+                    drawBorder: false
+                },
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString() + ' DH';
+                    },
+                    font: {
+                        size: 11
+                    },
+                    padding: 10
+                }
+            },
+            x: {
+                grid: {
+                    display: false,
+                    drawBorder: false
+                },
+                ticks: {
+                    font: {
+                        size: 11
+                    },
+                    padding: 10,
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            }
+        },
+        layout: {
+            padding: {
+                top: 10,
+                right: 10,
+                bottom: 10,
+                left: 10
+            }
+        }
+    };
+
+    // Sales by Circuit Chart
+    const salesByCircuitCtx = document.getElementById('salesByCircuitChart').getContext('2d');
+    new Chart(salesByCircuitCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for circuit in sales_by_circuit|slice:":5" %}'{{ circuit.circuit__titre }}',{% endfor %}],
+            datasets: [{
+                label: 'Ventes (DH)',
+                data: [{% for circuit in sales_by_circuit|slice:":5" %}{{ circuit.total_sales }},{% endfor %}],
+                backgroundColor: 'rgba(46, 204, 113, 0.5)',
+                borderColor: 'rgba(46, 204, 113, 1)',
+                borderWidth: 1,
+                borderRadius: 5,
+                barThickness: 'flex',
+                maxBarThickness: 40
+            }]
+        },
+        options: {
+            ...commonOptions,
+            plugins: {
+                ...commonOptions.plugins,
+                legend: {
+                    ...commonOptions.plugins.legend,
+                    display: false // Hide legend for bar chart
+                }
+            }
+        }
+    });
+
+    // Monthly Sales Chart
+    const monthlySalesCtx = document.getElementById('monthlySalesChart').getContext('2d');
+    new Chart(monthlySalesCtx, {
+        type: 'line',
+        data: {
+            labels: [{% for month in sales_by_month %}'{{ month.month|date:"M Y" }}',{% endfor %}],
+            datasets: [{
+                label: 'Ventes Mensuelles (DH)',
+                data: [{% for month in sales_by_month %}{{ month.total_sales }},{% endfor %}],
+                fill: true,
+                backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                borderColor: 'rgba(46, 204, 113, 1)',
+                tension: 0.4,
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(46, 204, 113, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: commonOptions
+    });
+});
+
+document.getElementById('rapport-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Disable the submit button and show loading state
+    const submitBtn = document.getElementById('generate-btn');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Génération en cours...';
+    
+    // Get form data
+    const formData = new FormData(this);
+    
+    // Add date range to form data
+    formData.append('date_from', document.getElementById('date_from').value);
+    formData.append('date_to', document.getElementById('date_to').value);
+    
+    // Send AJAX request
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        // Create a download link and trigger it
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rapport_${formData.get('type')}_${new Date().toISOString().slice(0,10)}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+        
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Une erreur est survenue lors de la génération du rapport.');
+        
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    });
+});
+</script>
+{% endblock %} 

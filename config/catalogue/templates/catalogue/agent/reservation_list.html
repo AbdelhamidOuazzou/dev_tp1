@@ -1,0 +1,261 @@
+{% extends 'catalogue/base.html' %}
+
+{% block title %}Gestion des Réservations{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="text-gradient">Gestion des Réservations</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link {% if not status %}active{% endif %}" href="{% url 'agent_reservation_list' %}">
+                                Toutes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if status == 'en_attente' %}active{% endif %}" href="{% url 'agent_reservation_list' %}?status=en_attente">
+                                En attente
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if status == 'confirmee' %}active{% endif %}" href="{% url 'agent_reservation_list' %}?status=confirmee">
+                                Confirmées
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if status == 'annulee' %}active{% endif %}" href="{% url 'agent_reservation_list' %}?status=annulee">
+                                Annulées
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Client</th>
+                                    <th>Circuit</th>
+                                    <th>Date de départ</th>
+                                    <th>Voyageurs</th>
+                                    <th>Prix total</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in reservations %}
+                                <tr>
+                                    <td>#{{ reservation.id }}</td>
+                                    <td>
+                                        {{ reservation.client.get_full_name }}<br>
+                                        <small class="text-muted">{{ reservation.client.email }}</small>
+                                    </td>
+                                    <td>{{ reservation.circuit.titre }}</td>
+                                    <td>{{ reservation.date_depart|date:"d/m/Y" }}</td>
+                                    <td>{{ reservation.nombre_voyageurs }}</td>
+                                    <td>{{ reservation.prix_total }} €</td>
+                                    <td>
+                                        <span class="badge {% if reservation.statut == 'en_attente' %}bg-warning{% elif reservation.statut == 'confirmee' %}bg-success{% elif reservation.statut == 'annulee' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                            {{ reservation.get_statut_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{% url 'agent_reservation_detail' reservation.pk %}" class="btn btn-view" title="Voir les détails">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if reservation.statut == 'en_attente' %}
+                                                <form method="post" action="{% url 'agent_reservation_update' reservation.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="statut" value="confirmee">
+                                                    <button type="submit" class="btn btn-confirm" title="Confirmer" data-confirm="Confirmer cette réservation ?">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="post" action="{% url 'agent_reservation_update' reservation.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="statut" value="annulee">
+                                                    <button type="submit" class="btn btn-cancel" title="Annuler" data-confirm="Annuler cette réservation ?">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">Aucune réservation trouvée</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3f37c9;
+    --accent-color: #4895ef;
+    --success-color: #4361ee;
+    --warning-color: #3f37c9;
+    --danger-color: #e63946;
+    --text-dark: #2b2d42;
+    --text-light: #8d99ae;
+    --gradient-primary: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+    --gradient-secondary: linear-gradient(135deg, #4895ef 0%, #4361ee 100%);
+}
+
+.text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(67, 97, 238, 0.1);
+    border-radius: 1rem;
+}
+
+.card-header {
+    background: white;
+    border-bottom: 1px solid rgba(67, 97, 238, 0.1);
+    padding: 1rem;
+}
+
+.nav-tabs {
+    border: none;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: var(--text-light);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--primary-color);
+    background: rgba(67, 97, 238, 0.1);
+}
+
+.nav-tabs .nav-link.active {
+    color: white;
+    background: var(--gradient-primary);
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    color: var(--text-dark);
+    font-weight: 600;
+    padding: 1rem;
+}
+
+.table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 500;
+}
+
+.bg-warning {
+    background: var(--warning-color) !important;
+}
+
+.bg-success {
+    background: var(--success-color) !important;
+}
+
+.bg-danger {
+    background: var(--danger-color) !important;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-start;
+}
+
+.btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    border: none;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.btn-view {
+    background: var(--gradient-primary);
+    box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+}
+
+.btn-confirm {
+    background: var(--gradient-secondary);
+    box-shadow: 0 2px 8px rgba(72, 149, 239, 0.3);
+}
+
+.btn-cancel {
+    background: var(--danger-color);
+    box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-view:hover {
+    background: var(--gradient-secondary);
+}
+
+.btn-confirm:hover {
+    background: var(--gradient-primary);
+}
+
+.btn-cancel:hover {
+    background: #d90429;
+}
+
+@media (max-width: 768px) {
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+{% endblock %} 

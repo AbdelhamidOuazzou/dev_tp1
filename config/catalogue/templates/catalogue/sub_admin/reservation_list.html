@@ -1,0 +1,959 @@
+{% extends 'catalogue/base.html' %}
+{% load static %}
+
+{% block title %}Gestion des Réservations{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section with Stats -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="h3 mb-0">Gestion des Réservations</h1>
+                    <p class="text-muted mb-0">Gérez et suivez toutes vos réservations</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <!-- Quick Actions Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bolt me-2"></i>
+                            Actions Rapides
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="bulkConfirm()">
+                                <i class="fas fa-check-circle me-2 text-success"></i>Confirmer la sélection
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="bulkCancel()">
+                                <i class="fas fa-times-circle me-2 text-danger"></i>Annuler la sélection
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportSelected()">
+                                <i class="fas fa-file-export me-2 text-primary"></i>Exporter la sélection
+                            </a></li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
+                        <i class="fas fa-filter me-2"></i>
+                        Filtres Avancés
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-file-export me-2"></i>
+                            Exporter
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="?export=excel"><i class="fas fa-file-excel me-2 text-success"></i>Excel</a></li>
+                            <li><a class="dropdown-item" href="?export=pdf"><i class="fas fa-file-pdf me-2 text-danger"></i>PDF</a></li>
+                            <li><a class="dropdown-item" href="?export=csv"><i class="fas fa-file-csv me-2 text-primary"></i>CSV</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-gradient-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Total Réservations</h6>
+                            <h2 class="mt-2 mb-0">{{ total_count }}</h2>
+                            <small class="opacity-75">{{ monthly_reservations }} ce mois</small>
+                        </div>
+                        <i class="fas fa-calendar-check fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Revenu Total</h6>
+                            <h2 class="mt-2 mb-0">{{ total_revenue|floatformat:2 }} €</h2>
+                            <small class="opacity-75">{{ monthly_revenue|floatformat:2 }} € ce mois</small>
+                        </div>
+                        <i class="fas fa-euro-sign fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Paiements en Attente</h6>
+                            <h2 class="mt-2 mb-0">{{ total_pending_payments|floatformat:2 }} €</h2>
+                            <small class="opacity-75">{{ pending_count }} réservation(s)</small>
+                        </div>
+                        <i class="fas fa-clock fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Taux de Confirmation</h6>
+                            <h2 class="mt-2 mb-0">{{ confirmation_rate|floatformat:1 }}%</h2>
+                            <small class="opacity-75">{{ confirmed_count }} confirmée(s)</small>
+                        </div>
+                        <i class="fas fa-chart-line fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Filter and Search -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'sub_admin_reservation_list' %}" 
+                           class="btn {% if not status %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                           data-bs-toggle="tooltip"
+                           title="Afficher toutes les réservations">
+                            <i class="fas fa-list me-1"></i>
+                            Tous ({{ total_count }})
+                        </a>
+                        {% for status_value, status_label in reservation_status_choices %}
+                        <a href="{% url 'sub_admin_reservation_list' %}?status={{ status_value }}" 
+                           class="btn {% if status == status_value %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                           data-bs-toggle="tooltip"
+                           title="Filtrer par {{ status_label }}">
+                            {% if status_value == 'confirmee' %}
+                            <i class="fas fa-check-circle me-1"></i>
+                            {% elif status_value == 'en_attente' %}
+                            <i class="fas fa-clock me-1"></i>
+                            {% elif status_value == 'annulee' %}
+                            <i class="fas fa-times-circle me-1"></i>
+                            {% endif %}
+                            {{ status_label }}
+                            {% if status_value == 'confirmee' %}
+                            ({{ confirmed_count }})
+                            {% elif status_value == 'en_attente' %}
+                            ({{ pending_count }})
+                            {% elif status_value == 'annulee' %}
+                            ({{ cancelled_count }})
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    <!-- Payment Status Filter -->
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <a href="?payment_status=complete" 
+                           class="btn btn-sm btn-outline-success"
+                           data-bs-toggle="tooltip"
+                           title="Filtrer les paiements complets">
+                            <i class="fas fa-check-circle me-1"></i>Paiements Complets
+                        </a>
+                        <a href="?payment_status=partial" 
+                           class="btn btn-sm btn-outline-warning"
+                           data-bs-toggle="tooltip"
+                           title="Filtrer les paiements partiels">
+                            <i class="fas fa-clock me-1"></i>Paiements Partiels
+                        </a>
+                        <a href="?payment_status=pending" 
+                           class="btn btn-sm btn-outline-danger"
+                           data-bs-toggle="tooltip"
+                           title="Filtrer les paiements en attente">
+                            <i class="fas fa-exclamation-circle me-1"></i>Paiements en Attente
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <form method="get" class="card">
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" 
+                               name="search" 
+                               class="form-control" 
+                               placeholder="Rechercher par ID, circuit, client..." 
+                               value="{{ search }}"
+                               data-bs-toggle="tooltip"
+                               title="Rechercher dans les réservations">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Reservations Table -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selectAll">
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <a href="?sort_by={% if sort_by == 'id' %}-id{% else %}id{% endif %}" 
+                                           class="text-decoration-none text-dark d-flex align-items-center">
+                                            ID
+                                            {% if sort_by == 'id' %}
+                                            <i class="fas fa-sort-up ms-1"></i>
+                                            {% elif sort_by == '-id' %}
+                                            <i class="fas fa-sort-down ms-1"></i>
+                                            {% else %}
+                                            <i class="fas fa-sort text-muted ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>Circuit</th>
+                                    <th>Client</th>
+                                    <th>
+                                        <a href="?sort_by={% if sort_by == 'date_reservation' %}-date_reservation{% else %}date_reservation{% endif %}" 
+                                           class="text-decoration-none text-dark d-flex align-items-center">
+                                            Date
+                                            {% if sort_by == 'date_reservation' %}
+                                            <i class="fas fa-sort-up ms-1"></i>
+                                            {% elif sort_by == '-date_reservation' %}
+                                            <i class="fas fa-sort-down ms-1"></i>
+                                            {% else %}
+                                            <i class="fas fa-sort text-muted ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>Statut</th>
+                                    <th>
+                                        <a href="?sort_by={% if sort_by == 'prix_total' %}-prix_total{% else %}prix_total{% endif %}" 
+                                           class="text-decoration-none text-dark d-flex align-items-center">
+                                            Prix
+                                            {% if sort_by == 'prix_total' %}
+                                            <i class="fas fa-sort-up ms-1"></i>
+                                            {% elif sort_by == '-prix_total' %}
+                                            <i class="fas fa-sort-down ms-1"></i>
+                                            {% else %}
+                                            <i class="fas fa-sort text-muted ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>Paiement</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in reservations %}
+                                <tr>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input reservation-checkbox" 
+                                                   type="checkbox" 
+                                                   value="{{ reservation.id }}"
+                                                   data-reservation-id="{{ reservation.id }}">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">#{{ reservation.id }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'circuit_detail' reservation.circuit.id %}" 
+                                           class="text-decoration-none d-flex align-items-center">
+                                            <img src="{{ reservation.circuit.image.url }}" 
+                                                 alt="{{ reservation.circuit.titre }}"
+                                                 class="rounded me-2"
+                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                            <div>
+                                                <div class="fw-medium">{{ reservation.circuit.titre }}</div>
+                                                {% if reservation.options_count > 0 %}
+                                                <small class="text-muted">
+                                                    +{{ reservation.options_count }} option(s)
+                                                </small>
+                                                {% endif %}
+                                            </div>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-user-circle me-2 text-primary"></i>
+                                            <div>
+                                                <div class="fw-medium">
+                                                    {{ reservation.client.get_full_name|default:reservation.client.username }}
+                                                </div>
+                                                <small class="text-muted">{{ reservation.client.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-calendar-alt me-2 text-info"></i>
+                                            <div>
+                                                <div>{{ reservation.date_reservation|date:"d/m/Y" }}</div>
+                                                <small class="text-muted">{{ reservation.date_reservation|date:"H:i" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if reservation.statut == 'confirmee' %}bg-success
+                                                         {% elif reservation.statut == 'en_attente' %}bg-warning
+                                                         {% elif reservation.statut == 'annulee' %}bg-danger
+                                                         {% else %}bg-secondary{% endif %}">
+                                            {% if reservation.statut == 'confirmee' %}
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            {% elif reservation.statut == 'en_attente' %}
+                                            <i class="fas fa-clock me-1"></i>
+                                            {% elif reservation.statut == 'annulee' %}
+                                            <i class="fas fa-times-circle me-1"></i>
+                                            {% endif %}
+                                            {{ reservation.get_statut_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <strong class="text-primary">{{ reservation.prix_total }} €</strong>
+                                            {% if reservation.options_total > 0 %}
+                                            <small class="text-muted">
+                                                +{{ reservation.options_total }} € options
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 6px; width: 100px;">
+                                                <div class="progress-bar {% if reservation.payment_status == 'complete' %}bg-success
+                                                                     {% elif reservation.payment_status == 'partial' %}bg-warning
+                                                                     {% else %}bg-danger{% endif %}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ reservation.payment_percentage }}%"
+                                                     aria-valuenow="{{ reservation.payment_percentage }}" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                            <div class="d-flex flex-column">
+                                                <small class="text-muted">{{ reservation.payment_percentage|floatformat:0 }}%</small>
+                                                {% if reservation.remaining_amount > 0 %}
+                                                <small class="text-danger">-{{ reservation.remaining_amount }} €</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'sub_admin_reservation_detail' reservation.id %}" class="btn btn-sm btn-info" title="Voir les détails">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if reservation.statut == 'confirmee' %}
+                                            <a href="{% url 'sub_admin_reservation_update' reservation.id %}" class="btn btn-sm btn-primary" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% endif %}
+                                            {% if reservation.statut == 'annulee' %}
+                                            <a href="{% url 'sub_admin_reservation_delete' reservation.id %}" class="btn btn-sm btn-danger" title="Supprimer">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                            <a href="{% url 'sub_admin_reservation_print' reservation.id %}" class="btn btn-sm btn-secondary" title="Imprimer" target="_blank">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-5">
+                                        <div class="empty-state">
+                                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                            <p class="text-muted mb-0">Aucune réservation trouvée</p>
+                                            {% if search or status or date_from or date_to %}
+                                            <a href="{% url 'sub_admin_reservation_list' %}" class="btn btn-outline-primary mt-3">
+                                                Réinitialiser les filtres
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Recent Activity -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2 text-primary"></i>
+                        Activité Récente
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for reservation in recent_activity %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <span class="badge {% if reservation.statut == 'confirmee' %}bg-success
+                                                     {% elif reservation.statut == 'en_attente' %}bg-warning
+                                                     {% elif reservation.statut == 'annulee' %}bg-danger
+                                                     {% else %}bg-secondary{% endif %}">
+                                        {{ reservation.get_statut_display }}
+                                    </span>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">#{{ reservation.id }}</h6>
+                                        <small class="text-muted">
+                                            {{ reservation.date_reservation|timesince }}
+                                        </small>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ reservation.circuit.titre }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center py-4">
+                            <i class="fas fa-history fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">Aucune activité récente</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Reservations -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                        Prochaines Réservations
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for reservation in upcoming_reservations %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <img src="{{ reservation.circuit.image.url }}" 
+                                         alt="{{ reservation.circuit.titre }}"
+                                         class="rounded"
+                                         style="width: 48px; height: 48px; object-fit: cover;">
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">{{ reservation.circuit.titre }}</h6>
+                                        <span class="badge bg-primary">
+                                            {{ reservation.date_reservation|date:"d/m" }}
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ reservation.nombre_voyageurs }} voyageur(s)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center py-4">
+                            <i class="fas fa-calendar-check fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">Aucune réservation à venir</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="get">
+                <div class="modal-header">
+                    <h5 class="modal-title">Filtres Avancés</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Période</label>
+                        <div class="row g-2">
+                            <div class="col">
+                                <input type="date" 
+                                       name="date_from" 
+                                       class="form-control" 
+                                       value="{{ date_from }}"
+                                       placeholder="Du">
+                            </div>
+                            <div class="col">
+                                <input type="date" 
+                                       name="date_to" 
+                                       class="form-control" 
+                                       value="{{ date_to }}"
+                                       placeholder="Au">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Statut</label>
+                        <select name="status" class="form-select">
+                            <option value="">Tous les statuts</option>
+                            {% for status_value, status_label in reservation_status_choices %}
+                            <option value="{{ status_value }}" 
+                                    {% if status == status_value %}selected{% endif %}>
+                                {{ status_label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tri</label>
+                        <select name="sort_by" class="form-select">
+                            <option value="-date_reservation" 
+                                    {% if sort_by == '-date_reservation' %}selected{% endif %}>
+                                Plus récent
+                            </option>
+                            <option value="date_reservation" 
+                                    {% if sort_by == 'date_reservation' %}selected{% endif %}>
+                                Plus ancien
+                            </option>
+                            <option value="-prix_total" 
+                                    {% if sort_by == '-prix_total' %}selected{% endif %}>
+                                Prix décroissant
+                            </option>
+                            <option value="prix_total" 
+                                    {% if sort_by == 'prix_total' %}selected{% endif %}>
+                                Prix croissant
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="{% url 'sub_admin_reservation_list' %}" class="btn btn-secondary">
+                        Réinitialiser
+                    </a>
+                    <button type="submit" class="btn btn-primary">Appliquer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'paiement_create' 0 %}" id="paymentForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter un Paiement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Montant</label>
+                        <div class="input-group">
+                            <input type="number" 
+                                   name="montant" 
+                                   class="form-control" 
+                                   step="0.01" 
+                                   required>
+                            <span class="input-group-text">€</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Méthode de Paiement</label>
+                        <select name="methode_paiement" class="form-select" required>
+                            <option value="carte">Carte Bancaire</option>
+                            <option value="virement">Virement</option>
+                            <option value="especes">Espèces</option>
+                            <option value="cheque">Chèque</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Exporter la Réservation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-outline-success" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel me-2"></i>Exporter en Excel
+                    </a>
+                    <a href="#" class="btn btn-outline-danger" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf me-2"></i>Exporter en PDF
+                    </a>
+                    <a href="#" class="btn btn-outline-primary" onclick="exportToCSV()">
+                        <i class="fas fa-file-csv me-2"></i>Exporter en CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalTitle">Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmationModalBody">
+                <!-- Content will be set dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirmationModalConfirm">Confirmer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-gradient-primary {
+    background: var(--gradient-primary);
+}
+
+.bg-gradient-success {
+    background: var(--gradient-secondary);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(to right, #FFE66D, #FFD93D);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(to right, #4ECDC4, #45B7AF);
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.btn {
+    border-radius: 25px;
+    padding: 0.8rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: var(--gradient-primary);
+    opacity: 0.9;
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background: var(--gradient-primary);
+    border-color: transparent;
+    color: white;
+}
+
+.table {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background: var(--gradient-secondary);
+}
+
+.badge-warning {
+    background: linear-gradient(to right, #FFE66D, #FFD93D);
+    color: var(--text-dark);
+}
+
+.badge-danger {
+    background: var(--gradient-primary);
+}
+
+.progress {
+    height: 6px;
+    border-radius: 3px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 3px;
+    transition: width 0.6s ease;
+}
+
+.dropdown-menu {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.dropdown-item {
+    padding: 0.8rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: none;
+    padding: 1.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    padding: 0.8rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+}
+
+/* Rest of your existing styles... */
+</style>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    if (tooltipTriggerList.length > 0) {
+        var tooltipList = [].slice.call(tooltipTriggerList).map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+
+    // Select all checkbox functionality
+    var selectAllCheckbox = document.getElementById('selectAll');
+    var reservationCheckboxes = document.querySelectorAll('.reservation-checkbox');
+    
+    if (selectAllCheckbox && reservationCheckboxes.length > 0) {
+        selectAllCheckbox.addEventListener('change', function() {
+            reservationCheckboxes.forEach(function(checkbox) {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        });
+    }
+});
+
+// Reservation Management Functions
+function validateReservation(reservationId) {
+    showConfirmationModal(
+        'Valider la réservation',
+        'Êtes-vous sûr de vouloir valider cette réservation ?',
+        function() {
+            fetch(`/sub-admin/reservations/${reservationId}/validate/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erreur lors de la validation: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Une erreur est survenue lors de la validation');
+            });
+        }
+    );
+}
+
+function cancelReservation(reservationId) {
+    showConfirmationModal(
+        'Annuler la réservation',
+        'Êtes-vous sûr de vouloir annuler cette réservation ? Cette action est irréversible.',
+        function() {
+            fetch(`/sub-admin/reservations/${reservationId}/cancel/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erreur lors de l\'annulation: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Une erreur est survenue lors de l\'annulation');
+            });
+        }
+    );
+}
+
+// Export Functions
+function exportReservation(reservationId) {
+    window.currentReservationId = reservationId;
+    var exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
+    exportModal.show();
+}
+
+function exportToExcel() {
+    window.location.href = `/sub-admin/reservations/${window.currentReservationId}/export/?format=excel`;
+}
+
+function exportToPDF() {
+    window.location.href = `/sub-admin/reservations/${window.currentReservationId}/export/?format=pdf`;
+}
+
+function exportToCSV() {
+    window.location.href = `/sub-admin/reservations/${window.currentReservationId}/export/?format=csv`;
+}
+
+// Bulk Export
+function exportSelected() {
+    var selectedIds = getSelectedReservationIds();
+    if (selectedIds.length === 0) {
+        alert('Veuillez sélectionner au moins une réservation');
+        return;
+    }
+    window.location.href = `/sub-admin/reservations/export/?ids=${selectedIds.join(',')}&format=excel`;
+}
+
+// Utility Functions
+function showConfirmationModal(title, message, confirmCallback) {
+    document.getElementById('confirmationModalTitle').textContent = title;
+    document.getElementById('confirmationModalBody').textContent = message;
+    
+    var confirmButton = document.getElementById('confirmationModalConfirm');
+    var modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    
+    // Remove any existing event listeners
+    var newConfirmButton = confirmButton.cloneNode(true);
+    confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton);
+    
+    // Add new event listener
+    newConfirmButton.addEventListener('click', function() {
+        modal.hide();
+        confirmCallback();
+    });
+    
+    modal.show();
+}
+
+function getSelectedReservationIds() {
+    var checkboxes = document.querySelectorAll('.reservation-checkbox:checked');
+    return Array.from(checkboxes).map(function(checkbox) {
+        return checkbox.dataset.reservationId;
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
+{% endblock %} 

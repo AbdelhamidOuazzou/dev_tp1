@@ -1,0 +1,25 @@
+{% extends 'catalogue/admin/base.html' %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">Confirmer la suppression</h4>
+    </div>
+    <div class="card-body">
+        <p>Êtes-vous sûr de vouloir supprimer la destination "{{ destination.nom }}" ?</p>
+        <p class="text-danger">Cette action est irréversible et supprimera également tous les circuits associés.</p>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'admin_destination_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Annuler
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Confirmer la suppression
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

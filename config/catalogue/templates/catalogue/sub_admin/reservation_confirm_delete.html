@@ -1,0 +1,44 @@
+{% extends "catalogue/base.html" %}
+{% load static %}
+
+{% block title %}Supprimer la réservation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Confirmer la suppression</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Êtes-vous sûr de vouloir supprimer la réservation #{{ reservation.id }} ?</p>
+                    <p>Cette action est irréversible et supprimera définitivement la réservation.</p>
+                    
+                    <div class="alert alert-info">
+                        <h5>Détails de la réservation :</h5>
+                        <ul class="list-unstyled">
+                            <li><strong>Client :</strong> {{ reservation.client.nom }} {{ reservation.client.prenom }}</li>
+                            <li><strong>Circuit :</strong> {{ reservation.circuit.nom }}</li>
+                            <li><strong>Date de départ :</strong> {{ reservation.date_depart|date:"d/m/Y" }}</li>
+                            <li><strong>Statut :</strong> {{ reservation.get_statut_display }}</li>
+                        </ul>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'sub_admin_reservation_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Confirmer la suppression
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

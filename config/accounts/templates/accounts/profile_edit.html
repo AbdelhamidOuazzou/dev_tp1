@@ -1,0 +1,85 @@
+{% extends 'catalogue/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Modifier mon Profil</h2>
+            <a href="{% url 'profile' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retour au profil
+            </a>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" class="mt-4">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="first_name" class="form-label">Prénom</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="last_name" class="form-label">Nom</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="phone" class="form-label">Téléphone</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone }}">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="address" class="form-label">Adresse</label>
+                    <textarea class="form-control" id="address" name="address" rows="3">{{ user.address }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="preferences" class="form-label">Préférences de Voyage</label>
+                    <textarea class="form-control" id="preferences" name="preferences" rows="4">{{ profile.preferences }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="travel_documents" class="form-label">Documents de Voyage</label>
+                    <input type="file" class="form-control" id="travel_documents" name="travel_documents">
+                    {% if profile.travel_documents %}
+                        <small class="text-muted">Document actuel: {{ profile.travel_documents.name }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Enregistrer les modifications
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control {
+    border-radius: 0.375rem;
+}
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,104 @@
+{% extends 'catalogue/admin/base.html' %}
+{% load payment_filters %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">Effectuer un Paiement</h2>
+                    <a href="{% url 'reservation_detail' reservation.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Retour à la réservation
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="reservation-info mb-4">
+                        <h3>Réservation #{{ reservation.id }}</h3>
+                        <p class="text-muted">{{ reservation.circuit.nom }} - {{ reservation.circuit.destination.nom }}</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Date de départ:</strong> {{ reservation.date_depart }}</p>
+                                <p><strong>Nombre de voyageurs:</strong> {{ reservation.nombre_voyageurs }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Prix total:</strong> {{ reservation.prix_total }}€</p>
+                                <p><strong>Montant déjà payé:</strong> {{ reservation.paiements.all|sum_completed_payments }}€</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.montant.id_for_label }}" class="form-label">Montant</label>
+                                {{ form.montant }}
+                                {% if form.montant.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.montant.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.type_paiement.id_for_label }}" class="form-label">Type de paiement</label>
+                                {{ form.type_paiement }}
+                                {% if form.type_paiement.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.type_paiement.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.notes.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Ceci est une simulation de paiement. Aucune transaction réelle ne sera effectuée.
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-credit-card"></i> Simuler le paiement
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control {
+    border-radius: 0.375rem;
+}
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+.reservation-info {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.375rem;
+}
+</style>
+{% endblock %} 

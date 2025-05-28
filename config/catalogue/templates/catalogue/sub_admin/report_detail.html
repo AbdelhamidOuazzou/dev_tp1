@@ -1,0 +1,202 @@
+{% extends 'catalogue/base.html' %}
+{% load static %}
+
+{% block title %}{{ rapport.titre }} - Détails du Rapport{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">{{ rapport.titre }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'catalogue:sub_admin_report_export' rapport.pk %}" class="btn btn-primary">
+                <i class="fas fa-file-pdf me-2"></i>Exporter en PDF
+            </a>
+            <a href="{% url 'catalogue:sub_admin_reports' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title mb-3">Informations du Rapport</h5>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Type</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge {% if rapport.type == 'ventes' %}bg-success
+                                             {% elif rapport.type == 'occupation' %}bg-info
+                                             {% else %}bg-warning{% endif %}">
+                                {{ rapport.get_type_display }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4">Période</dt>
+                        <dd class="col-sm-8">
+                            Du {{ rapport.date_debut|date:"d/m/Y" }} au {{ rapport.date_fin|date:"d/m/Y" }}
+                        </dd>
+
+                        <dt class="col-sm-4">Créé par</dt>
+                        <dd class="col-sm-8">{{ rapport.cree_par.get_full_name }}</dd>
+
+                        <dt class="col-sm-4">Date de création</dt>
+                        <dd class="col-sm-8">{{ rapport.date_creation|date:"d/m/Y à H:i" }}</dd>
+
+                        {% if rapport.description %}
+                        <dt class="col-sm-4">Description</dt>
+                        <dd class="col-sm-8">{{ rapport.description }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Données du Rapport</h5>
+            
+            {% if rapport.type == 'ventes' %}
+                <!-- Sales Report -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Total des Ventes</h6>
+                                <h3 class="card-title mb-0">{{ rapport.donnees.total_sales|floatformat:2 }} DH</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Nombre de Réservations</h6>
+                                <h3 class="card-title mb-0">{{ rapport.donnees.total_reservations }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="mb-3">Ventes par Circuit</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Circuit</th>
+                                <th>Ventes</th>
+                                <th>Réservations</th>
+                                <th>Prix Moyen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for circuit in rapport.donnees.sales_by_circuit %}
+                            <tr>
+                                <td>{{ circuit.circuit__titre }}</td>
+                                <td>{{ circuit.total_sales|floatformat:2 }} DH</td>
+                                <td>{{ circuit.reservation_count }}</td>
+                                <td>{{ circuit.avg_price|floatformat:2 }} DH</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {% elif rapport.type == 'occupation' %}
+                <!-- Occupancy Report -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Taux d'Occupation Moyen</h6>
+                                <h3 class="card-title mb-0">{{ rapport.donnees.overall_occupancy_rate|floatformat:1 }}%</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Places Totales</h6>
+                                <h3 class="card-title mb-0">{{ rapport.donnees.total_places }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Places Réservées</h6>
+                                <h3 class="card-title mb-0">{{ rapport.donnees.total_reserved }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="mb-3">Détails d'Occupation par Circuit</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Circuit</th>
+                                <th>Places Totales</th>
+                                <th>Places Réservées</th>
+                                <th>Taux d'Occupation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for circuit in rapport.donnees.occupancy_by_circuit %}
+                            <tr>
+                                <td>{{ circuit.circuit__titre }}</td>
+                                <td>{{ circuit.total_places }}</td>
+                                <td>{{ circuit.total_reserved }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                            <div class="progress-bar {% if circuit.occupancy_rate >= 80 %}bg-success
+                                                                     {% elif circuit.occupancy_rate >= 50 %}bg-warning
+                                                                     {% else %}bg-danger{% endif %}"
+                                                 role="progressbar"
+                                                 style="width: {{ circuit.occupancy_rate }}%"
+                                                 aria-valuenow="{{ circuit.occupancy_rate }}"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <span>{{ circuit.occupancy_rate|floatformat:1 }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {% elif rapport.type == 'clients' %}
+                <!-- Clients Report -->
+                <h6 class="mb-3">Top Clients</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Total Dépensé</th>
+                                <th>Réservations</th>
+                                <th>Moyenne</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in rapport.donnees.client_stats %}
+                            <tr>
+                                <td>{{ client.client__username }}</td>
+                                <td>{{ client.total_spent|floatformat:2 }} DH</td>
+                                <td>{{ client.reservation_count }}</td>
+                                <td>{{ client.avg_spent|floatformat:2 }} DH</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

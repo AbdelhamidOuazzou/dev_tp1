@@ -1,0 +1,326 @@
+{% extends 'catalogue/base.html' %}
+
+{% block title %}{% if action == 'Create' %}Créer un Circuit{% else %}Modifier le Circuit{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .navbar {
+        background: linear-gradient(135deg, #4caf50 0%, #81c784 100%) !important;
+        padding: 1rem 0;
+        box-shadow: 0 2px 10px rgba(76, 175, 80, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h1>{% if form.instance.pk %}Modifier{% else %}Nouveau{% endif %} Circuit</h1>
+            <p class="form-subtitle">Remplissez les informations ci-dessous pour {% if form.instance.pk %}modifier{% else %}créer{% endif %} un circuit</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="form-content">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="{{ form.titre.id_for_label }}">Titre du circuit</label>
+                {{ form.titre }}
+                {% if form.titre.errors %}
+                <div class="error-message">
+                    {% for error in form.titre.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <div class="error-message">
+                    {% for error in form.description.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.destination.id_for_label }}">Destination</label>
+                    {{ form.destination }}
+                    {% if form.destination.errors %}
+                    <div class="error-message">
+                        {% for error in form.destination.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.date_depart.id_for_label }}">Date de départ</label>
+                    {{ form.date_depart }}
+                    {% if form.date_depart.errors %}
+                    <div class="error-message">
+                        {% for error in form.date_depart.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.duree.id_for_label }}">Durée (jours)</label>
+                    {{ form.duree }}
+                    {% if form.duree.errors %}
+                    <div class="error-message">
+                        {% for error in form.duree.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.prix_base.id_for_label }}">Prix de base (DH)</label>
+                    {{ form.prix_base }}
+                    {% if form.prix_base.errors %}
+                    <div class="error-message">
+                        {% for error in form.prix_base.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.places_disponibles.id_for_label }}">Places disponibles</label>
+                {{ form.places_disponibles }}
+                {% if form.places_disponibles.errors %}
+                <div class="error-message">
+                    {% for error in form.places_disponibles.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.options.id_for_label }}">Options disponibles</label>
+                {{ form.options }}
+                {% if form.options.errors %}
+                <div class="error-message">
+                    {% for error in form.options.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    {% if form.instance.pk %}Mettre à jour{% else %}Créer{% endif %}
+                </button>
+                <a href="{% url 'sub_admin_circuit_list' %}" class="btn btn-outline">
+                    <i class="fas fa-times"></i>
+                    Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #2ECC71;
+    --secondary-color: #27AE60;
+    --accent-color: #82E0AA;
+    --text-dark: #2C3E50;
+    --text-light: #7F8C8D;
+    --gradient-primary: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+    --gradient-secondary: linear-gradient(135deg, #82E0AA 0%, #2ECC71 100%);
+    --success-color: #2ECC71;
+    --warning-color: #F1C40F;
+    --danger-color: #E74C3C;
+}
+
+.form-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.form-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.form-header {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+}
+
+.form-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.form-subtitle {
+    margin: 0.5rem 0 0;
+    opacity: 0.9;
+}
+
+.form-content {
+    padding: 2rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #eee;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+}
+
+.form-group textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+.form-group select[multiple] {
+    height: 150px;
+}
+
+.error-message {
+    color: var(--danger-color);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-danger {
+    background: rgba(231, 76, 60, 0.1);
+    color: var(--danger-color);
+    border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn {
+    padding: 0.8rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+}
+
+.btn-outline {
+    background: white;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    .form-container {
+        margin: 1rem auto;
+    }
+
+    .form-header {
+        padding: 1.5rem;
+    }
+
+    .form-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .form-content {
+        padding: 1.5rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,115 @@
+{% extends 'catalogue/base.html' %}
+
+{% block title %}Liste des Options{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Liste des Options</h2>
+        </div>
+        <div class="col text-end">
+            <a href="{% url 'sub_admin_option_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nouvelle Option
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for option in options %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ option.nom }}</h5>
+                    <p class="card-text">{{ option.description|truncatewords:30 }}</p>
+                    <div class="option-details">
+                        <p><i class="fas fa-tag"></i> {{ option.prix }} DH</p>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'sub_admin_option_edit' option.pk %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-edit"></i> Modifier
+                        </a>
+                        <a href="{% url 'sub_admin_option_delete' option.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette option ?')">
+                            <i class="fas fa-trash"></i> Supprimer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                Aucune option n'a été créée pour le moment.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #3498DB;
+    --secondary-color: #2980B9;
+    --accent-color: #AED6F1;
+    --text-dark: #2C3E50;
+    --text-light: #7F8C8D;
+    --gradient-primary: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+    --gradient-secondary: linear-gradient(135deg, #AED6F1 0%, #3498DB 100%);
+    --success-color: #2ECC71;
+    --warning-color: #F1C40F;
+    --danger-color: #E74C3C;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+}
+
+.btn-outline {
+    background: white;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.option-details {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.option-details p {
+    margin-bottom: 0.5rem;
+    color: var(--text-light);
+}
+
+.option-details i {
+    width: 20px;
+    color: var(--primary-color);
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-primary:hover {
+    background: var(--gradient-secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+}
+
+.alert-info {
+    background-color: var(--accent-color);
+    border-color: var(--primary-color);
+    color: var(--text-dark);
+}
+</style>
+{% endblock %} 

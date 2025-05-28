@@ -1,0 +1,472 @@
+{% extends 'catalogue/base.html' %}
+{% load static %}
+{% load catalogue_extras %}
+
+{% block title %}Détails de la Réservation #{{ reservation.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="h3 mb-0">Détails de la Réservation #{{ reservation.id }}</h1>
+                    <p class="text-muted mb-0">
+                        Circuit: {{ reservation.circuit.titre }} | 
+                        Client: {{ reservation.client.get_full_name|default:reservation.client.username }}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'sub_admin_reservation_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+                    </a>
+                    {% if reservation.statut == 'en_attente' %}
+                    <button type="button" class="btn btn-success" onclick="validateReservation({{ reservation.pk }})">
+                        <i class="fas fa-check me-2"></i>Valider
+                    </button>
+                    {% endif %}
+                    {% if reservation.statut != 'annulee' %}
+                    <button type="button" class="btn btn-danger" onclick="cancelReservation({{ reservation.pk }})">
+                        <i class="fas fa-times me-2"></i>Annuler
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Left Column - Reservation Details -->
+        <div class="col-lg-8">
+            <!-- Status Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title mb-1">Statut de la Réservation</h5>
+                            <span class="badge {% if reservation.statut == 'confirmee' %}bg-success{% elif reservation.statut == 'en_attente' %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ reservation.get_statut_display }}
+                            </span>
+                        </div>
+                        <div class="text-end">
+                            <p class="mb-0 text-muted">Date de réservation</p>
+                            <h6 class="mb-0">{{ reservation.date_reservation|date:"d/m/Y H:i" }}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Circuit Details Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Détails du Circuit</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Circuit:</strong> {{ reservation.circuit.titre }}</p>
+                            <p><strong>Destination:</strong> {{ reservation.circuit.destination.nom }}</p>
+                            <p><strong>Date de départ:</strong> {{ reservation.circuit.date_depart|date:"d/m/Y" }}</p>
+                            <p><strong>Date de retour:</strong> {{ reservation.circuit.date_retour|date:"d/m/Y" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Prix de base:</strong> {{ reservation.circuit.prix_base }} €</p>
+                            <p><strong>Nombre de voyageurs:</strong> {{ reservation.nombre_voyageurs }}</p>
+                            <p><strong>Prix total:</strong> {{ reservation.prix_total }} €</p>
+                            <p><strong>Places disponibles:</strong> {{ reservation.circuit.places_disponibles }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Details Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Informations Client</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nom:</strong> {{ reservation.client.get_full_name|default:reservation.client.username }}</p>
+                            <p><strong>Email:</strong> {{ reservation.client.email }}</p>
+                            <p><strong>Téléphone:</strong> {{ reservation.client.telephone|default:"Non renseigné" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Adresse:</strong> {{ reservation.client.adresse|default:"Non renseignée" }}</p>
+                            <p><strong>Ville:</strong> {{ reservation.client.ville|default:"Non renseignée" }}</p>
+                            <p><strong>Code postal:</strong> {{ reservation.client.code_postal|default:"Non renseigné" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Options Card -->
+            {% if reservation.reservation_options.exists %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Options Supplémentaires</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Option</th>
+                                    <th>Quantité</th>
+                                    <th>Prix unitaire</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for option in reservation.reservation_options.all %}
+                                <tr>
+                                    <td>{{ option.option.nom }}</td>
+                                    <td>{{ option.quantite }}</td>
+                                    <td>{{ option.option.prix }} €</td>
+                                    <td>{{ option.option.prix|multiply:option.quantite }} €</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="3" class="text-end">Total des options:</th>
+                                    <th>{{ reservation.reservation_options.all|sum_options }} €</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column - Payment Information -->
+        <div class="col-lg-4">
+            <!-- Payment Summary Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Résumé des Paiements</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Progression du paiement</h6>
+                        <div class="progress mb-2" style="height: 10px;">
+                            <div class="progress-bar {% if payment_percentage == 100 %}bg-success{% elif payment_percentage > 0 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ payment_percentage }}%"
+                                 aria-valuenow="{{ payment_percentage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                        <p class="text-end mb-0">{{ payment_percentage|floatformat:1 }}% payé</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="mb-1"><strong>Montant total:</strong></p>
+                        <h4 class="mb-0">{{ reservation.prix_total }} €</h4>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="mb-1"><strong>Montant payé:</strong></p>
+                        <h4 class="text-success mb-0">{{ total_paid }} €</h4>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="mb-1"><strong>Montant restant:</strong></p>
+                        <h4 class="text-danger mb-0">{{ remaining_amount }} €</h4>
+                    </div>
+
+                    <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                        <i class="fas fa-plus me-2"></i>Ajouter un paiement
+                    </button>
+                </div>
+            </div>
+
+            <!-- Payment History Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Historique des Paiements</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if paiements %}
+                    <div class="list-group list-group-flush">
+                        {% for paiement in paiements %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ paiement.montant }} €</h6>
+                                    <small class="text-muted">{{ paiement.date_paiement|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <span class="badge {% if paiement.statut == 'complete' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ paiement.get_statut_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted mb-0">Aucun paiement enregistré</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ajouter un Paiement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'sub_admin_paiement_create' reservation.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="montant" class="form-label">Montant</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="montant" name="montant" step="0.01" min="0.01" max="{{ remaining_amount }}" required>
+                            <span class="input-group-text">€</span>
+                        </div>
+                        <small class="form-text text-muted">Montant maximum: {{ remaining_amount }} €</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="type_paiement" class="form-label">Type de paiement</label>
+                        <select class="form-select" id="type_paiement" name="type_paiement" required>
+                            <option value="">Sélectionnez un type de paiement</option>
+                            <option value="acompte">Acompte</option>
+                            <option value="solde">Solde</option>
+                            <option value="remboursement">Remboursement</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes (optionnel)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Ajoutez des notes ou commentaires sur ce paiement"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer le paiement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalTitle">Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmationModalBody">
+                <!-- Content will be set dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirmationModalConfirm">Confirmer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Remove the date_paiement initialization since it's no longer needed
+document.addEventListener('DOMContentLoaded', function() {
+    // Add validation for the amount field
+    var amountInput = document.getElementById('montant');
+    if (amountInput) {
+        amountInput.addEventListener('input', function() {
+            var value = parseFloat(this.value);
+            var max = parseFloat(this.max);
+            if (value > max) {
+                this.value = max;
+            }
+        });
+    }
+});
+
+// Reservation Management Functions
+function validateReservation(reservationId) {
+    showConfirmationModal(
+        'Valider la réservation',
+        'Êtes-vous sûr de vouloir valider cette réservation ?',
+        function() {
+            fetch(`/sub-admin/reservations/${reservationId}/validate/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erreur lors de la validation: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Une erreur est survenue lors de la validation');
+            });
+        }
+    );
+}
+
+function cancelReservation(reservationId) {
+    showConfirmationModal(
+        'Annuler la réservation',
+        'Êtes-vous sûr de vouloir annuler cette réservation ? Cette action est irréversible.',
+        function() {
+            fetch(`/sub-admin/reservations/${reservationId}/cancel/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erreur lors de l\'annulation: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Une erreur est survenue lors de l\'annulation');
+            });
+        }
+    );
+}
+
+// Utility Functions
+function showConfirmationModal(title, message, confirmCallback) {
+    document.getElementById('confirmationModalTitle').textContent = title;
+    document.getElementById('confirmationModalBody').textContent = message;
+    
+    var confirmButton = document.getElementById('confirmationModalConfirm');
+    var modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    
+    // Remove any existing event listeners
+    var newConfirmButton = confirmButton.cloneNode(true);
+    confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton);
+    
+    // Add new event listener
+    newConfirmButton.addEventListener('click', function() {
+        modal.hide();
+        confirmCallback();
+    });
+    
+    modal.show();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding: 1rem 1.5rem;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.progress {
+    height: 10px;
+    border-radius: 5px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 5px;
+    transition: width 0.6s ease;
+}
+
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding: 1rem 1.5rem;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.btn {
+    border-radius: 25px;
+    padding: 0.8rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    padding: 0.8rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+}
+</style>
+{% endblock %}
+{% endblock %} 

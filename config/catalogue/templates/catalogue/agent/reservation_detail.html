@@ -1,0 +1,174 @@
+{% extends 'catalogue/base.html' %}
+{% load payment_filters %}
+
+{% block title %}Détails de la Réservation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <a href="{% url 'agent_dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retour au tableau de bord
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Informations de la réservation -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Détails de la Réservation #{{ reservation.id }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Informations Client</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Nom:</strong> {{ reservation.client.get_full_name }}</li>
+                                <li><strong>Email:</strong> {{ reservation.client.email }}</li>
+                                <li><strong>Téléphone:</strong> {{ reservation.client.telephone }}</li>
+                                <li><strong>Adresse:</strong> {{ reservation.client.adresse }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Détails du Circuit</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Circuit:</strong> {{ reservation.circuit.titre }}</li>
+                                <li><strong>Destination:</strong> {{ reservation.circuit.destination.nom }}</li>
+                                <li><strong>Date de départ:</strong> {{ reservation.date_depart|date:"d/m/Y" }}</li>
+                                <li><strong>Nombre de voyageurs:</strong> {{ reservation.nombre_voyageurs }}</li>
+                                <li><strong>Prix total:</strong> {{ reservation.prix_total }} €</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {% if reservation.notes %}
+                    <div class="mt-4">
+                        <h5>Notes</h5>
+                        <p>{{ reservation.notes }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        <h5>Statut</h5>
+                        <span class="badge {% if reservation.statut == 'en_attente' %}bg-warning{% elif reservation.statut == 'confirmee' %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ reservation.get_statut_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statut du paiement -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Statut du Paiement</h5>
+                </div>
+                <div class="card-body">
+                    {% with total_paye=reservation.paiements.all|sum_completed_payments %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Prix total:</strong> {{ reservation.prix_total }}€</p>
+                            <p><strong>Montant payé:</strong> {{ total_paye }}€</p>
+                            <p><strong>Montant restant:</strong> {{ reservation.prix_total|sub:total_paye }}€</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert {% if total_paye >= reservation.prix_total %}alert-success{% else %}alert-warning{% endif %}">
+                                <h5 class="alert-heading">
+                                    {% if total_paye >= reservation.prix_total %}
+                                        <i class="fas fa-check-circle"></i> Réservation entièrement payée
+                                    {% else %}
+                                        <i class="fas fa-exclamation-circle"></i> Paiement incomplet
+                                    {% endif %}
+                                </h5>
+                                <p class="mb-0">
+                                    {% if total_paye >= reservation.prix_total %}
+                                        Le client a effectué tous les paiements requis.
+                                    {% else %}
+                                        Il reste {{ reservation.prix_total|sub:total_paye }}€ à payer.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- Historique des paiements -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Historique des Paiements</h5>
+                </div>
+                <div class="card-body">
+                    {% if paiements %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Montant</th>
+                                        <th>Type</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for paiement in paiements %}
+                                    <tr>
+                                        <td>{{ paiement.date_paiement|date:"d/m/Y" }}</td>
+                                        <td>{{ paiement.montant }} €</td>
+                                        <td>{{ paiement.get_type_paiement_display }}</td>
+                                        <td>
+                                            <span class="badge {% if paiement.statut == 'complete' %}bg-success{% else %}bg-warning{% endif %}">
+                                                {{ paiement.get_statut_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Aucun paiement enregistré.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if reservation.statut == 'en_attente' %}
+                        <form method="post" action="{% url 'agent_reservation_update' reservation.pk %}" class="mb-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="statut" value="confirmee">
+                            <button type="submit" class="btn btn-success btn-block w-100" onclick="return confirm('Êtes-vous sûr de vouloir confirmer cette réservation ?')">
+                                <i class="fas fa-check"></i> Confirmer la réservation
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'agent_reservation_update' reservation.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="statut" value="annulee">
+                            <button type="submit" class="btn btn-danger btn-block w-100" onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')">
+                                <i class="fas fa-times"></i> Annuler la réservation
+                            </button>
+                        </form>
+                    {% elif reservation.statut == 'confirmee' %}
+                        <form method="post" action="{% url 'agent_reservation_update' reservation.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="statut" value="annulee">
+                            <button type="submit" class="btn btn-danger btn-block w-100" onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation ?')">
+                                <i class="fas fa-times"></i> Annuler la réservation
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

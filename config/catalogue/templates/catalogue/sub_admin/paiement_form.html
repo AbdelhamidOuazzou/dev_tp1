@@ -1,0 +1,298 @@
+{% extends 'catalogue/base.html' %}
+{% load static %}
+
+{% block title %}Ajouter un Paiement - Réservation #{{ reservation.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="h3 mb-0">Ajouter un Paiement</h1>
+                    <p class="text-muted mb-0">
+                        Réservation #{{ reservation.id }} | 
+                        Circuit: {{ reservation.circuit.titre }}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'sub_admin_reservation_detail' reservation.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Retour aux détails
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Payment Summary Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Résumé de la Réservation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Client:</strong> {{ reservation.client.get_full_name|default:reservation.client.username }}</p>
+                            <p><strong>Date de réservation:</strong> {{ reservation.date_reservation|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Statut:</strong> 
+                                <span class="badge {% if reservation.statut == 'confirmee' %}bg-success{% elif reservation.statut == 'en_attente' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ reservation.get_statut_display }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Montant total:</strong> {{ reservation.prix_total }} €</p>
+                            <p><strong>Montant payé:</strong> {{ total_paid }} €</p>
+                            <p><strong>Montant restant:</strong> {{ remaining_amount }} €</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Form Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Nouveau Paiement</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.montant.id_for_label }}" class="form-label">Montant</label>
+                                <div class="input-group">
+                                    <input type="number" 
+                                           class="form-control {% if form.montant.errors %}is-invalid{% endif %}" 
+                                           id="{{ form.montant.id_for_label }}"
+                                           name="{{ form.montant.html_name }}"
+                                           value="{{ form.montant.value|default:'' }}"
+                                           step="0.01"
+                                           min="0.01"
+                                           max="{{ remaining_amount }}"
+                                           required>
+                                    <span class="input-group-text">€</span>
+                                    {% if form.montant.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.montant.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <small class="form-text text-muted">Montant maximum: {{ remaining_amount }} €</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.mode_paiement.id_for_label }}" class="form-label">Mode de paiement</label>
+                                <select class="form-select {% if form.mode_paiement.errors %}is-invalid{% endif %}"
+                                        id="{{ form.mode_paiement.id_for_label }}"
+                                        name="{{ form.mode_paiement.html_name }}"
+                                        required>
+                                    <option value="">Sélectionnez un mode de paiement</option>
+                                    <option value="carte" {% if form.mode_paiement.value == 'carte' %}selected{% endif %}>Carte bancaire</option>
+                                    <option value="virement" {% if form.mode_paiement.value == 'virement' %}selected{% endif %}>Virement</option>
+                                    <option value="especes" {% if form.mode_paiement.value == 'especes' %}selected{% endif %}>Espèces</option>
+                                    <option value="cheque" {% if form.mode_paiement.value == 'cheque' %}selected{% endif %}>Chèque</option>
+                                </select>
+                                {% if form.mode_paiement.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.mode_paiement.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.date_paiement.id_for_label }}" class="form-label">Date du paiement</label>
+                                <input type="datetime-local" 
+                                       class="form-control {% if form.date_paiement.errors %}is-invalid{% endif %}"
+                                       id="{{ form.date_paiement.id_for_label }}"
+                                       name="{{ form.date_paiement.html_name }}"
+                                       value="{{ form.date_paiement.value|date:'Y-m-d\TH:i'|default:'' }}"
+                                       required>
+                                {% if form.date_paiement.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.date_paiement.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.reference.id_for_label }}" class="form-label">Référence (optionnel)</label>
+                                <input type="text" 
+                                       class="form-control {% if form.reference.errors %}is-invalid{% endif %}"
+                                       id="{{ form.reference.id_for_label }}"
+                                       name="{{ form.reference.html_name }}"
+                                       value="{{ form.reference.value|default:'' }}"
+                                       placeholder="Numéro de transaction, référence chèque, etc.">
+                                {% if form.reference.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.reference.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">Notes (optionnel)</label>
+                            <textarea class="form-control {% if form.notes.errors %}is-invalid{% endif %}"
+                                      id="{{ form.notes.id_for_label }}"
+                                      name="{{ form.notes.html_name }}"
+                                      rows="3"
+                                      placeholder="Ajoutez des notes ou commentaires sur ce paiement">{{ form.notes.value|default:'' }}</textarea>
+                            {% if form.notes.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.notes.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'sub_admin_reservation_detail' reservation.id %}" class="btn btn-outline-secondary">
+                                Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Enregistrer le paiement
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date to now if not already set
+    var dateInput = document.getElementById('{{ form.date_paiement.id_for_label }}');
+    if (dateInput && !dateInput.value) {
+        var now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        dateInput.value = now.toISOString().slice(0, 16);
+    }
+
+    // Form validation
+    var form = document.querySelector('.needs-validation');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    }
+
+    // Amount validation
+    var amountInput = document.getElementById('{{ form.montant.id_for_label }}');
+    if (amountInput) {
+        amountInput.addEventListener('input', function() {
+            var value = parseFloat(this.value);
+            var max = parseFloat(this.max);
+            if (value > max) {
+                this.value = max;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding: 1rem 1.5rem;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    padding: 0.8rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+}
+
+.input-group-text {
+    border-radius: 0 10px 10px 0;
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+}
+
+.input-group .form-control {
+    border-radius: 10px 0 0 10px;
+}
+
+.btn {
+    border-radius: 25px;
+    padding: 0.8rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.was-validated .form-control:valid,
+.was-validated .form-select:valid {
+    border-color: #198754;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+}
+
+.was-validated .form-control:invalid,
+.was-validated .form-select:invalid {
+    border-color: #dc3545;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+}
+</style>
+{% endblock %}
+{% endblock %} 

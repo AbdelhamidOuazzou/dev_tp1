@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Menu Admin</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'admin_dashboard' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a href="{% url 'admin_destination_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-map-marker-alt"></i> Destinations
+                    </a>
+                    <a href="{% url 'admin_circuit_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-route"></i> Circuits
+                    </a>
+                    <a href="{% url 'admin_option_list' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-plus-circle"></i> Options
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            {% block admin_content %}
+            {% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

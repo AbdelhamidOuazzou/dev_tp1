@@ -1,0 +1,86 @@
+{% extends 'catalogue/admin/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">Simulation de Paiement</h2>
+                    <a href="{% url 'reservation_detail' paiement.reservation.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Retour à la réservation
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="payment-info mb-4">
+                        <h3>Détails du Paiement</h3>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Numéro de facture:</strong> {{ paiement.numero_facture }}</p>
+                                <p><strong>Date:</strong> {{ paiement.date_paiement|date:"d/m/Y H:i" }}</p>
+                                <p><strong>Type:</strong> {{ paiement.get_type_paiement_display }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Montant:</strong> {{ paiement.montant }}€</p>
+                                <p><strong>Statut actuel:</strong> 
+                                    <span class="badge {% if paiement.statut == 'complete' %}bg-success
+                                                      {% elif paiement.statut == 'en_attente' %}bg-warning
+                                                      {% elif paiement.statut == 'annule' %}bg-danger
+                                                      {% else %}bg-info{% endif %}">
+                                        {{ paiement.get_statut_display }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reservation-info mb-4">
+                        <h3>Réservation Associée</h3>
+                        <p class="text-muted">{{ paiement.reservation.circuit.nom }} - {{ paiement.reservation.circuit.destination.nom }}</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Date de départ:</strong> {{ paiement.reservation.date_depart }}</p>
+                                <p><strong>Nombre de voyageurs:</strong> {{ paiement.reservation.nombre_voyageurs }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Prix total:</strong> {{ paiement.reservation.prix_total }}€</p>
+                                <p><strong>Montant déjà payé:</strong> 
+                                    {% with total_paye=paiement.reservation.paiements.filter.statut='complete'|sum_montant %}
+                                        {{ total_paye }}€
+                                    {% endwith %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Vous êtes sur le point de simuler un paiement. Cette action marquera le paiement comme complété.
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check"></i> Confirmer la simulation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.badge {
+    font-size: 0.9em;
+    padding: 0.5em 0.8em;
+}
+.payment-info, .reservation-info {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.375rem;
+}
+</style>
+{% endblock %} 

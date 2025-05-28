@@ -1,0 +1,20 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Connexion{% endblock %}
+
+{% block auth_content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h3 class="card-title text-center">Connexion</h3>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-success w-100">Se connecter</button>
+            </form>
+            <hr>
+            <p class="text-center">Pas encore inscrit ? <a href="{% url 'register' %}">Créer un compte</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

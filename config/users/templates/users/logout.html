@@ -1,0 +1,14 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Déconnexion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4 text-center">
+            <h3>Vous êtes maintenant déconnecté.</h3>
+            <a href="{% url 'login' %}" class="btn btn-primary mt-3">Se reconnecter</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

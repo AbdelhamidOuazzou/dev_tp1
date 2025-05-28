@@ -1,0 +1,413 @@
+{% extends 'catalogue/base.html' %}
+
+{% block title %}Tableau de Bord Sous-Administrateur{% endblock %}
+
+{% block extra_css %}
+<style>
+    .navbar {
+        background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%) !important;
+        padding: 1rem 0;
+        box-shadow: 0 2px 10px rgba(255, 107, 107, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 dashboard-container">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-0 text-gradient">Tableau de Bord</h1>
+                    <p class="text-muted">Gérez vos destinations, circuits et options</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Access Features -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="h4 mb-3">Accès Rapide</h3>
+        </div>
+        
+        <!-- Availability Management -->
+        <div class="col-md-4 mb-4">
+            <div class="feature-card availability-card">
+                <div class="feature-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Disponibilités</h4>
+                    <p>Gérez les disponibilités des circuits et le calendrier</p>
+                    <a href="{% url 'sub_admin_availability' %}" class="btn btn-feature">
+                        Accéder <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservations -->
+        <div class="col-md-4 mb-4">
+            <div class="feature-card reservation-card">
+                <div class="feature-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Réservations</h4>
+                    <p>Gérez et suivez les réservations des clients</p>
+                    <a href="{% url 'sub_admin_reservation_list' %}" class="btn btn-feature">
+                        Accéder <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports -->
+        <div class="col-md-4 mb-4">
+            <div class="feature-card report-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Rapports</h4>
+                    <p>Consultez les rapports de ventes et d'occupation</p>
+                    <a href="{% url 'sub_admin_reports' %}" class="btn btn-feature">
+                        Accéder <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Communication -->
+        <div class="col-md-4 mb-4">
+            <div class="feature-card communication-card">
+                <div class="feature-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Communication</h4>
+                    <p>Gérez la communication avec les clients</p>
+                    <a href="{% url 'sub_admin_communication' %}" class="btn btn-feature">
+                        Accéder <i class="fas fa-arrow-right"></i>
+                    </a>
+    </div>
+                        </div>
+                    </div>
+
+        <!-- Destinations -->
+        <div class="col-md-4 mb-4">
+            <div class="feature-card destination-card">
+                <div class="feature-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Destinations</h4>
+                    <p>Gérez les destinations et leurs détails</p>
+                    <a href="{% url 'sub_admin_destination_list' %}" class="btn btn-feature">
+                        Accéder <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Circuits -->
+        <div class="col-md-4 mb-4">
+            <div class="feature-card circuit-card">
+                <div class="feature-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Circuits</h4>
+                    <p>Gérez les circuits et leurs disponibilités</p>
+                    <a href="{% url 'sub_admin_circuit_list' %}" class="btn btn-feature">
+                        Accéder <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                        </div>
+                    </div>
+
+        <!-- Options -->
+        <div class="col-md-4 mb-4">
+            <div class="feature-card option-card">
+                <div class="feature-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Options</h4>
+                    <p>Gérez les options et suppléments</p>
+                    <a href="{% url 'sub_admin_option_list' %}" class="btn btn-feature">
+                        Accéder <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="col-md-4 mb-4">
+            <div class="feature-card settings-card">
+                <div class="feature-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Paramètres</h4>
+                    <p>Configurez vos préférences et paramètres</p>
+                    <a href="{% url 'sub_admin_settings' %}" class="btn btn-feature">
+                        Accéder <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="h4 mb-3">Statistiques Rapides</h3>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card destination-stats">
+                <div class="stats-content">
+                    <h6 class="text-uppercase mb-1">Destinations</h6>
+                    <h2 class="mb-0">{{ destinations.count }}</h2>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card circuit-stats">
+                <div class="stats-content">
+                    <h6 class="text-uppercase mb-1">Circuits</h6>
+                    <h2 class="mb-0">{{ circuits.count }}</h2>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card option-stats">
+                <div class="stats-content">
+                    <h6 class="text-uppercase mb-1">Options</h6>
+                    <h2 class="mb-0">{{ options.count }}</h2>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-list"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modern Dashboard Theme */
+.dashboard-container {
+    background: linear-gradient(135deg, #f6f9fc 0%, #f1f4f8 100%);
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+/* Feature Cards */
+.feature-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--icon-color);
+}
+
+.feature-content {
+    flex-grow: 1;
+}
+
+.feature-content h4 {
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.feature-content p {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.btn-feature {
+    background: var(--gradient-start);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-feature:hover {
+    background: var(--gradient-end);
+    color: white;
+    transform: translateX(5px);
+}
+
+/* Card Variants */
+.availability-card {
+    --gradient-start: #3498db;
+    --gradient-end: #2980b9;
+    --icon-color: #3498db;
+    --text-color: #2c3e50;
+    --text-muted: #7f8c8d;
+}
+
+.reservation-card {
+    --gradient-start: #2ecc71;
+    --gradient-end: #27ae60;
+    --icon-color: #2ecc71;
+    --text-color: #2c3e50;
+    --text-muted: #7f8c8d;
+}
+
+.report-card {
+    --gradient-start: #e74c3c;
+    --gradient-end: #c0392b;
+    --icon-color: #e74c3c;
+    --text-color: #2c3e50;
+    --text-muted: #7f8c8d;
+}
+
+.communication-card {
+    --gradient-start: #9b59b6;
+    --gradient-end: #8e44ad;
+    --icon-color: #9b59b6;
+    --text-color: #2c3e50;
+    --text-muted: #7f8c8d;
+}
+
+.destination-card {
+    --gradient-start: #f1c40f;
+    --gradient-end: #f39c12;
+    --icon-color: #f1c40f;
+    --text-color: #2c3e50;
+    --text-muted: #7f8c8d;
+}
+
+.circuit-card {
+    --gradient-start: #1abc9c;
+    --gradient-end: #16a085;
+    --icon-color: #1abc9c;
+    --text-color: #2c3e50;
+    --text-muted: #7f8c8d;
+}
+
+.option-card {
+    --gradient-start: #34495e;
+    --gradient-end: #2c3e50;
+    --icon-color: #34495e;
+    --text-color: #2c3e50;
+    --text-muted: #7f8c8d;
+}
+
+.settings-card {
+    --gradient-start: #95a5a6;
+    --gradient-end: #7f8c8d;
+    --icon-color: #95a5a6;
+    --text-color: #2c3e50;
+    --text-muted: #7f8c8d;
+}
+
+/* Stats Cards */
+.stats-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stats-content h6 {
+    color: var(--text-muted);
+}
+
+.stats-content h2 {
+    color: var(--text-color);
+    font-weight: 700;
+}
+
+.stats-icon {
+    font-size: 2.5rem;
+    opacity: 0.2;
+}
+
+.destination-stats {
+    --text-color: #3498db;
+    --text-muted: #7f8c8d;
+}
+
+.circuit-stats {
+    --text-color: #2ecc71;
+    --text-muted: #7f8c8d;
+}
+
+.option-stats {
+    --text-color: #e74c3c;
+    --text-muted: #7f8c8d;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .feature-card {
+        margin-bottom: 1rem;
+    }
+    
+    .stats-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %} 

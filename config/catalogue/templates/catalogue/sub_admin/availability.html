@@ -1,0 +1,386 @@
+{% extends "catalogue/base.html" %}
+{% load static %}
+
+{% block title %}Gestion des Disponibilités{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+<style>
+    .calendar-container {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .fc-event {
+        cursor: pointer;
+        border-radius: 4px;
+        padding: 2px 4px;
+        margin: 1px 0;
+        font-size: 0.85em;
+    }
+    
+    .status-available {
+        background-color: #4CAF50 !important;
+        border-color: #4CAF50 !important;
+    }
+    
+    .status-limited {
+        background-color: #FF9800 !important;
+        border-color: #FF9800 !important;
+    }
+    
+    .status-full {
+        background-color: #f44336 !important;
+        border-color: #f44336 !important;
+    }
+    
+    .availability-card {
+        transition: transform 0.2s;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    
+    .availability-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .availability-status {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.85em;
+        font-weight: 500;
+    }
+    
+    .modal-header {
+        background: #4CAF50;
+        color: white;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .form-control:focus {
+        border-color: #4CAF50;
+        box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+    }
+    
+    .invalid-feedback {
+        display: block;
+        color: #dc3545;
+        font-size: 0.875em;
+        margin-top: 0.25rem;
+    }
+    
+    /* Make calendar more compact */
+    .fc {
+        font-size: 0.9em;
+    }
+    
+    .fc .fc-toolbar {
+        margin-bottom: 1em;
+    }
+    
+    .fc .fc-toolbar-title {
+        font-size: 1.2em;
+    }
+    
+    .fc .fc-button {
+        padding: 0.3em 0.6em;
+        font-size: 0.9em;
+    }
+    
+    .fc .fc-daygrid-day {
+        min-height: 80px;
+    }
+    
+    .fc .fc-daygrid-day-number {
+        font-size: 0.9em;
+        padding: 4px;
+    }
+    
+    .fc .fc-event-title {
+        font-weight: 500;
+    }
+    
+    @media (max-width: 768px) {
+        .calendar-container {
+            padding: 10px;
+        }
+        
+        .fc .fc-toolbar {
+            flex-direction: column;
+            gap: 0.5em;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Gestion des Disponibilités</h1>
+            <p class="text-muted">Gérez les disponibilités des circuits et le calendrier</p>
+        </div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAvailabilityModal">
+            <i class="fas fa-plus"></i> Ajouter une disponibilité
+        </button>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Circuits Disponibles</h5>
+                    <p class="card-text display-6">{{ circuits.count }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Places Totales</h5>
+                    <p class="card-text display-6">{{ total_places }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Taux d'Occupation</h5>
+                    <p class="card-text display-6">{{ occupation_rate }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="circuit" class="form-label">Circuit</label>
+                    <select name="circuit" id="circuit" class="form-select">
+                        <option value="">Tous les circuits</option>
+                        {% for circuit in circuits %}
+                        <option value="{{ circuit.id }}" {% if selected_circuit == circuit.id %}selected{% endif %}>
+                            {{ circuit.titre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">Date de début</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">Date de fin</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to|default:'' }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Filtrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Calendar and List View Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <ul class="nav nav-tabs mb-4" id="availabilityTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="calendar-tab" data-bs-toggle="tab" data-bs-target="#calendar" type="button" role="tab">
+                        <i class="fas fa-calendar-alt"></i> Calendrier
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab">
+                        <i class="fas fa-list"></i> Liste
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="availabilityTabsContent">
+                <!-- Calendar View -->
+                <div class="tab-pane fade show active" id="calendar" role="tabpanel">
+                    <div class="calendar-container">
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+
+                <!-- List View -->
+                <div class="tab-pane fade" id="list" role="tabpanel">
+                    <div class="row">
+                        {% for availability in availabilities %}
+                        <div class="col-md-4">
+                            <div class="card availability-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ availability.circuit.titre }}</h5>
+                                    <p class="card-text">
+                                        <strong>Date:</strong> {{ availability.date|date:"d/m/Y" }}<br>
+                                        <strong>Places disponibles:</strong> {{ availability.places_disponibles }}<br>
+                                        <strong>Places réservées:</strong> {{ availability.places_reservees }}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="availability-status 
+                                            {% if availability.places_disponibles > 10 %}status-available
+                                            {% elif availability.places_disponibles > 0 %}status-limited
+                                            {% else %}status-full{% endif %}">
+                                            {% if availability.places_disponibles > 10 %}Disponible
+                                            {% elif availability.places_disponibles > 0 %}Places limitées
+                                            {% else %}Complet{% endif %}
+                                        </span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteAvailability({{ availability.id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                Aucune disponibilité trouvée pour les critères sélectionnés.
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Availability Modal -->
+<div class="modal fade" id="addAvailabilityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ajouter une disponibilité</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" id="availabilityForm">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.circuit.id_for_label }}" class="form-label">Circuit</label>
+                        {{ form.circuit }}
+                        {% if form.circuit.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.circuit.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
+                        {{ form.date }}
+                        {% if form.date.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.date.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.places_disponibles.id_for_label }}" class="form-label">Places disponibles</label>
+                        {{ form.places_disponibles }}
+                        {% if form.places_disponibles.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.places_disponibles.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize calendar
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+        events: {{ calendar_events|safe }},
+        eventDidMount: function(info) {
+            // Add tooltip
+            var event = info.event;
+            var props = event.extendedProps;
+            info.el.title = `${props.circuit_name}\nPlaces disponibles: ${props.places_disponibles}\nPlaces réservées: ${props.places_reservees}\nStatut: ${props.status}`;
+        }
+    });
+    calendar.render();
+    
+    // Handle delete
+    window.deleteAvailability = function(id) {
+        if (confirm('Êtes-vous sûr de vouloir supprimer cette disponibilité ?')) {
+            fetch(`/sub-admin/availability/${id}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erreur lors de la suppression: ' + (data.message || 'Erreur inconnue'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Erreur lors de la suppression');
+            });
+        }
+    };
+    
+    // Set default date to today
+    document.getElementById('id_date').valueAsDate = new Date();
+});
+</script>
+{% endblock %} 

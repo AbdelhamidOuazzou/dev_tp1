@@ -1,0 +1,738 @@
+{% extends 'catalogue/base.html' %}
+
+{% block title %}Gestion des Paiements{% endblock %}
+
+{% block content %}
+<!-- Notification Container -->
+<div id="notification-container" class="notification-container"></div>
+
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="confirmation-modal">
+    <div class="confirmation-content">
+        <div class="confirmation-header">
+            <h3>Confirmation</h3>
+            <button class="confirmation-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="confirmation-body">
+            <i class="fas fa-exclamation-circle confirmation-icon"></i>
+            <p id="confirmation-message"></p>
+        </div>
+        <div class="confirmation-footer">
+            <button class="btn-cancel">Annuler</button>
+            <button class="btn-confirm">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="header-container">
+                <div class="header-content">
+                    <h1 class="h2 mb-0 text-gradient">Gestion des Paiements</h1>
+                    <p class="text-muted">Simulation, acomptes et factures</p>
+                </div>
+                <a href="{% url 'agent_dashboard' %}" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Retour au tableau de bord</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Simulation Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calculator"></i> Simulation de Paiement
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'paiement_simuler' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="montant_total" class="form-label">Montant Total</label>
+                            <div class="input-group">
+                                <span class="input-group-text">€</span>
+                                <input type="number" class="form-control" id="montant_total" name="montant_total" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nombre_paiements" class="form-label">Nombre de Paiements</label>
+                            <select class="form-select" id="nombre_paiements" name="nombre_paiements">
+                                <option value="1">Paiement unique</option>
+                                <option value="2">2 paiements</option>
+                                <option value="3">3 paiements</option>
+                                <option value="4">4 paiements</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-simulate">
+                            <i class="fas fa-calculator"></i>
+                            <span>Simuler</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Policy Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Politique de Paiement
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Acompte</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> 30% à la réservation</li>
+                        <li><i class="fas fa-check text-success"></i> 40% 30 jours avant le départ</li>
+                        <li><i class="fas fa-check text-success"></i> 30% le jour du départ</li>
+                    </ul>
+                    <hr>
+                    <h6>Politique d'Annulation</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-times text-danger"></i> Plus de 30 jours : 100% remboursé</li>
+                        <li><i class="fas fa-times text-danger"></i> 15-30 jours : 50% remboursé</li>
+                        <li><i class="fas fa-times text-danger"></i> Moins de 15 jours : Non remboursable</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Payments Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-invoice"></i> Paiements en Cours
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Réservation</th>
+                                    <th>Client</th>
+                                    <th>Montant Total</th>
+                                    <th>Acompte</th>
+                                    <th>Prochain Paiement</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for paiement in paiements %}
+                                <tr>
+                                    <td>#{{ paiement.reservation.id }}</td>
+                                    <td>{{ paiement.reservation.client.get_full_name }}</td>
+                                    <td>{{ paiement.reservation.prix_total }} €</td>
+                                    <td>{{ paiement.montant }} €</td>
+                                    <td>{{ paiement.date_prochain_paiement|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge {% if paiement.statut == 'complete' %}bg-success{% else %}bg-warning{% endif %}">
+                                            {{ paiement.get_statut_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{% url 'agent_payment_detail' paiement.id %}" class="btn-action btn-view" title="Voir les détails">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'agent_payment_edit' paiement.id %}" class="btn-action btn-edit" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="post" action="{% url 'agent_payment_delete' paiement.id %}" class="d-inline delete-form">
+                                                {% csrf_token %}
+                                                <button type="button" class="btn-action btn-delete" title="Supprimer" data-message="Êtes-vous sûr de vouloir supprimer ce paiement ?">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">Aucun paiement en cours</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3f37c9;
+    --accent-color: #4895ef;
+    --success-color: #4361ee;
+    --warning-color: #3f37c9;
+    --danger-color: #e63946;
+    --text-dark: #2b2d42;
+    --text-light: #8d99ae;
+    --gradient-primary: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+    --gradient-secondary: linear-gradient(135deg, #4895ef 0%, #4361ee 100%);
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+}
+
+.header-content {
+    flex: 1;
+}
+
+.btn-back {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+    text-decoration: none;
+    height: 42px;
+    white-space: nowrap;
+}
+
+.btn-back:hover {
+    background: var(--gradient-secondary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.4);
+    text-decoration: none;
+}
+
+.btn-back i {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-back span {
+    font-size: 0.95rem;
+}
+
+.btn-back:hover i {
+    transform: translateX(-3px);
+}
+
+.text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(67, 97, 238, 0.1);
+    border-radius: 1rem;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(67, 97, 238, 0.1);
+    padding: 1rem;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    color: var(--text-dark);
+    font-weight: 600;
+    padding: 1rem;
+}
+
+.table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 500;
+}
+
+.bg-warning {
+    background: var(--warning-color) !important;
+}
+
+.bg-success {
+    background: var(--success-color) !important;
+}
+
+.bg-danger {
+    background: var(--danger-color) !important;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-start;
+}
+
+.btn-action {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    border: none;
+    transition: all 0.3s ease;
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-view {
+    background: var(--gradient-primary);
+    box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+}
+
+.btn-edit {
+    background: var(--gradient-secondary);
+    box-shadow: 0 2px 8px rgba(72, 149, 239, 0.3);
+}
+
+.btn-delete {
+    background: var(--danger-color);
+    box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    color: white;
+    text-decoration: none;
+}
+
+.btn-view:hover {
+    background: var(--gradient-secondary);
+}
+
+.btn-edit:hover {
+    background: var(--gradient-primary);
+}
+
+.btn-delete:hover {
+    background: #d90429;
+}
+
+.btn-action i {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-action:hover i {
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .action-buttons {
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+    
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        margin-bottom: 0;
+    }
+}
+
+.btn-simulate {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+    text-decoration: none;
+    height: 42px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.btn-simulate:hover {
+    background: var(--gradient-secondary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.4);
+    text-decoration: none;
+}
+
+.btn-simulate i {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-simulate span {
+    font-size: 0.95rem;
+}
+
+.btn-simulate:hover i {
+    transform: scale(1.1);
+}
+
+/* Notification Styles */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notification {
+    background: white;
+    border-radius: 8px;
+    padding: 16px 20px;
+    min-width: 300px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateX(120%);
+    animation: slideIn 0.5s forwards;
+    border-left: 4px solid;
+}
+
+.notification.success {
+    border-left-color: var(--success-color);
+}
+
+.notification.error {
+    border-left-color: var(--danger-color);
+}
+
+.notification.warning {
+    border-left-color: var(--warning-color);
+}
+
+.notification.info {
+    border-left-color: var(--accent-color);
+}
+
+.notification-icon {
+    font-size: 1.25rem;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text-dark);
+}
+
+.notification-message {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+}
+
+.notification-close:hover {
+    color: var(--text-dark);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+}
+
+.notification.hide {
+    animation: slideOut 0.5s forwards;
+}
+
+/* Confirmation Modal Styles */
+.confirmation-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.confirmation-modal.show {
+    display: flex;
+    opacity: 1;
+}
+
+.confirmation-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    margin: auto;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.confirmation-modal.show .confirmation-content {
+    transform: translateY(0);
+}
+
+.confirmation-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.confirmation-header h3 {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 1.25rem;
+}
+
+.confirmation-close {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 1.25rem;
+    transition: color 0.3s ease;
+}
+
+.confirmation-close:hover {
+    color: var(--text-dark);
+}
+
+.confirmation-body {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.confirmation-icon {
+    font-size: 2rem;
+    color: var(--warning-color);
+}
+
+.confirmation-body p {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.confirmation-footer {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.confirmation-footer button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: var(--text-dark);
+}
+
+.btn-cancel:hover {
+    background: #e9ecef;
+}
+
+.btn-confirm {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+}
+
+.btn-confirm:hover {
+    background: var(--gradient-secondary);
+    transform: translateY(-1px);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to show notification
+    function showNotification(type, title, message) {
+        const container = document.getElementById('notification-container');
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        // Set icon based on type
+        let icon = 'info-circle';
+        switch(type) {
+            case 'success':
+                icon = 'check-circle';
+                break;
+            case 'error':
+                icon = 'exclamation-circle';
+                break;
+            case 'warning':
+                icon = 'exclamation-triangle';
+                break;
+        }
+        
+        notification.innerHTML = `
+            <i class="fas fa-${icon} notification-icon"></i>
+            <div class="notification-content">
+                <div class="notification-title">${title}</div>
+                <div class="notification-message">${message}</div>
+            </div>
+            <button class="notification-close">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        container.appendChild(notification);
+        
+        // Add click event to close button
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => {
+            notification.classList.add('hide');
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        });
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.classList.add('hide');
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }
+        }, 5000);
+    }
+
+    // Check for Django messages
+    {% if messages %}
+        {% for message in messages %}
+            showNotification(
+                '{{ message.tags }}',
+                '{{ message.tags|title }}',
+                '{{ message }}'
+            );
+        {% endfor %}
+    {% endif %}
+
+    // Confirmation Modal
+    const modal = document.getElementById('confirmation-modal');
+    const modalMessage = document.getElementById('confirmation-message');
+    let currentForm = null;
+
+    function showConfirmation(message, form) {
+        modalMessage.textContent = message;
+        currentForm = form;
+        modal.classList.add('show');
+    }
+
+    function hideConfirmation() {
+        modal.classList.remove('show');
+        currentForm = null;
+    }
+
+    // Close modal when clicking the close button or cancel
+    document.querySelector('.confirmation-close').addEventListener('click', hideConfirmation);
+    document.querySelector('.btn-cancel').addEventListener('click', hideConfirmation);
+
+    // Confirm action
+    document.querySelector('.btn-confirm').addEventListener('click', () => {
+        if (currentForm) {
+            currentForm.submit();
+        }
+        hideConfirmation();
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            hideConfirmation();
+        }
+    });
+
+    // Add click handlers to delete buttons
+    document.querySelectorAll('.delete-form button[type="button"]').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const form = e.target.closest('form');
+            const message = e.target.dataset.message;
+            showConfirmation(message, form);
+        });
+    });
+});
+</script>
+{% endblock %} 

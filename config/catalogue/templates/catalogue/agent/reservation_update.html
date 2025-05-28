@@ -1,0 +1,62 @@
+{% extends 'catalogue/base.html' %}
+
+{% block title %}Mettre à jour la Réservation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <a href="{% url 'agent_reservation_detail' reservation.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retour aux détails
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Mettre à jour la Réservation #{{ reservation.id }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'agent_reservation_update' reservation.pk %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <h5>Statut actuel</h5>
+                            <span class="badge {% if reservation.statut == 'en_attente' %}bg-warning{% elif reservation.statut == 'confirmee' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ reservation.get_statut_display }}
+                            </span>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Nouveau statut</h5>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="statut" id="statut_confirmee" value="confirmee" required {% if reservation.statut == 'confirmee' %}checked{% endif %}>
+                                <label class="form-check-label" for="statut_confirmee">
+                                    Confirmer la réservation
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="statut" id="statut_annulee" value="annulee" required {% if reservation.statut == 'annulee' %}checked{% endif %}>
+                                <label class="form-check-label" for="statut_annulee">
+                                    Annuler la réservation
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Enregistrer les modifications
+                            </button>
+                            <a href="{% url 'agent_reservation_detail' reservation.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

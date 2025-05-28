@@ -1,0 +1,59 @@
+{% extends 'catalogue/admin/base.html' %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Liste des Circuits</h4>
+        <a href="{% url 'admin_circuit_create' %}" class="btn btn-light">
+            <i class="fas fa-plus"></i> Nouveau Circuit
+        </a>
+    </div>
+    <div class="card-body">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Titre</th>
+                        <th>Destination</th>
+                        <th>Date de départ</th>
+                        <th>Durée</th>
+                        <th>Prix</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for circuit in circuits %}
+                    <tr>
+                        <td>{{ circuit.titre }}</td>
+                        <td>{{ circuit.destination.nom }}</td>
+                        <td>{{ circuit.date_depart|date:"d/m/Y" }}</td>
+                        <td>{{ circuit.duree }} jours</td>
+                        <td>{{ circuit.prix_base }}€</td>
+                        <td>
+                            <a href="{% url 'admin_circuit_edit' circuit.pk %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit"></i> Modifier
+                            </a>
+                            <a href="{% url 'admin_circuit_delete' circuit.pk %}" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i> Supprimer
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">Aucun circuit trouvé</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

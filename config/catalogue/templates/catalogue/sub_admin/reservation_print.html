@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% load catalogue_extras %}
+
+{% block title %}Reservation #{{ reservation.id }} - Print{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        body {
+            padding: 20px;
+            font-size: 12pt;
+        }
+        .no-print {
+            display: none !important;
+        }
+        .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        .print-section {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        .print-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .print-table th,
+        .print-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        .print-table th {
+            background-color: #f0f0f0;
+        }
+        .print-footer {
+            margin-top: 30px;
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            text-align: center;
+            font-size: 10pt;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Print Controls -->
+    <div class="no-print mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3">Print Reservation #{{ reservation.id }}</h1>
+            <div>
+                <button onclick="window.print()" class="btn btn-primary">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <a href="{% url 'catalogue:sub_admin_reservation_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Content -->
+    <div class="print-content">
+        <!-- Header -->
+        <div class="print-header">
+            <h1>Reservation Details</h1>
+            <p>Reservation #{{ reservation.id }} - {{ reservation.date_reservation|date:"F j, Y" }}</p>
+        </div>
+
+        <!-- Client Information -->
+        <div class="print-section">
+            <h2>Client Information</h2>
+            <table class="print-table">
+                <tr>
+                    <th>Name</th>
+                    <td>{{ reservation.client.get_full_name }}</td>
+                    <th>Email</th>
+                    <td>{{ reservation.client.email }}</td>
+                </tr>
+                <tr>
+                    <th>Phone</th>
+                    <td>{{ reservation.client.phone_number|default:"Not provided" }}</td>
+                    <th>Status</th>
+                    <td>
+                        <span class="badge {% if reservation.statut == 'confirmee' %}bg-success
+                                         {% elif reservation.statut == 'en_attente' %}bg-warning
+                                         {% else %}bg-danger{% endif %}">
+                            {{ reservation.get_statut_display }}
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Circuit Information -->
+        <div class="print-section">
+            <h2>Circuit Information</h2>
+            <table class="print-table">
+                <tr>
+                    <th>Circuit</th>
+                    <td>{{ reservation.circuit.titre }}</td>
+                    <th>Duration</th>
+                    <td>{{ reservation.circuit.duree }} days</td>
+                </tr>
+                <tr>
+                    <th>Start Date</th>
+                    <td>{{ reservation.date_reservation|date:"F j, Y" }}</td>
+                    <th>End Date</th>
+                    <td>{{ reservation.date_reservation|add_days:reservation.circuit.duree|date:"F j, Y" }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Options -->
+        {% if reservation.reservation_options.exists %}
+        <div class="print-section">
+            <h2>Selected Options</h2>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>Option</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for opt in reservation.reservation_options.all %}
+                    <tr>
+                        <td>{{ opt.option.nom }}</td>
+                        <td>{{ opt.quantite }}</td>
+                        <td>{{ opt.option.prix }} MAD</td>
+                        <td>{{ opt.option.prix|mul:opt.quantite }} MAD</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" class="text-end">Options Total:</th>
+                        <td>{{ options_total }} MAD</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Payment Information -->
+        <div class="print-section">
+            <h2>Payment Information</h2>
+            <table class="print-table">
+                <tr>
+                    <th>Total Amount</th>
+                    <td>{{ reservation.prix_total }} MAD</td>
+                    <th>Payment Status</th>
+                    <td>
+                        <span class="badge {% if payment_percentage == 100 %}bg-success
+                                         {% elif payment_percentage > 0 %}bg-warning
+                                         {% else %}bg-danger{% endif %}">
+                            {{ payment_percentage|floatformat:1 }}% Paid
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Amount Paid</th>
+                    <td>{{ total_paid }} MAD</td>
+                    <th>Remaining Amount</th>
+                    <td>{{ remaining_amount }} MAD</td>
+                </tr>
+            </table>
+
+            {% if reservation.paiements.exists %}
+            <h3 class="mt-4">Payment History</h3>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in reservation.paiements.all %}
+                    <tr>
+                        <td>{{ payment.date_paiement|date:"F j, Y" }}</td>
+                        <td>{{ payment.montant }} MAD</td>
+                        <td>
+                            <span class="badge {% if payment.statut == 'complete' %}bg-success
+                                             {% elif payment.statut == 'pending' %}bg-warning
+                                             {% else %}bg-danger{% endif %}">
+                                {{ payment.get_statut_display }}
+                            </span>
+                        </td>
+                        <td>{{ payment.get_methode_display }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <div class="print-footer">
+            <p>Generated on {{ current_date|date:"F j, Y" }} at {{ current_date|time:"H:i" }}</p>
+            <p>This is a computer-generated document. No signature is required.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-print when the page loads if print_only is true
+    {% if print_only %}
+    window.onload = function() {
+        window.print();
+    };
+    {% endif %}
+</script>
+{% endblock %} 

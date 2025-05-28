@@ -1,0 +1,542 @@
+{% extends 'catalogue/base.html' %}
+
+{% block title %}Tableau de bord - Agent{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="welcome-content">
+            <h1 class="text-gradient">Bienvenue, {{ user.username }}</h1>
+            <p class="date">{{ current_date|date:"l d F Y" }}</p>
+        </div>
+        <div class="quick-actions">
+            <a href="{% url 'agent_reservation_list' %}" class="btn btn-primary">
+                <i class="fas fa-list"></i>
+                Gérer les réservations
+            </a>
+            <a href="{% url 'payment_management' %}" class="btn btn-secondary">
+                <i class="fas fa-money-bill-wave"></i>
+                Gérer les paiements
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card circuit-card">
+            <div class="stat-icon">
+                <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ total_circuits }}</h3>
+                <p>Circuits</p>
+            </div>
+        </div>
+        <div class="stat-card reservation-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ total_reservations }}</h3>
+                <p>Réservations</p>
+            </div>
+        </div>
+        <div class="stat-card client-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ total_clients }}</h3>
+                <p>Clients</p>
+            </div>
+        </div>
+        <div class="stat-card revenue-card">
+            <div class="stat-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ total_revenue }} DH</h3>
+                <p>Revenus</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-grid">
+        <!-- Pending Reservations -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2><i class="fas fa-clock"></i> Réservations en Attente</h2>
+                <span class="badge badge-warning">{{ pending_reservations.count }}</span>
+            </div>
+            <div class="card-body">
+                {% if pending_reservations %}
+                    <div class="reservation-list">
+                        {% for reservation in pending_reservations %}
+                            <div class="reservation-item">
+                                <div class="reservation-info">
+                                    <h4>{{ reservation.circuit.titre }}</h4>
+                                    <p class="client-name">{{ reservation.client.username }}</p>
+                                    <p class="reservation-date">{{ reservation.date_reservation|date:"d/m/Y" }}</p>
+                                    <p class="reservation-details">
+                                        <span><i class="fas fa-users"></i> {{ reservation.nombre_voyageurs }} voyageurs</span>
+                                        <span><i class="fas fa-money-bill"></i> {{ reservation.prix_total }} DH</span>
+                                    </p>
+                                </div>
+                                <div class="reservation-actions">
+                                    <a href="{% url 'agent_reservation_detail' reservation.pk %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'agent_reservation_update' reservation.pk %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="no-data">Aucune réservation en attente</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Confirmed Reservations -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2><i class="fas fa-check-circle"></i> Réservations Confirmées</h2>
+                <span class="badge badge-success">{{ confirmed_reservations.count }}</span>
+            </div>
+            <div class="card-body">
+                {% if confirmed_reservations %}
+                    <div class="reservation-list">
+                        {% for reservation in confirmed_reservations %}
+                            <div class="reservation-item">
+                                <div class="reservation-info">
+                                    <h4>{{ reservation.circuit.titre }}</h4>
+                                    <p class="client-name">{{ reservation.client.username }}</p>
+                                    <p class="reservation-date">{{ reservation.date_reservation|date:"d/m/Y" }}</p>
+                                    <p class="reservation-details">
+                                        <span><i class="fas fa-users"></i> {{ reservation.nombre_voyageurs }} voyageurs</span>
+                                        <span><i class="fas fa-money-bill"></i> {{ reservation.prix_total }} DH</span>
+                                    </p>
+                                </div>
+                                <div class="reservation-actions">
+                                    <a href="{% url 'agent_reservation_detail' reservation.pk %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'paiement_create' reservation.pk %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-money-bill"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="no-data">Aucune réservation confirmée</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Cancelled Reservations -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2><i class="fas fa-times-circle"></i> Réservations Annulées</h2>
+                <span class="badge badge-danger">{{ cancelled_reservations.count }}</span>
+            </div>
+            <div class="card-body">
+                {% if cancelled_reservations %}
+                    <div class="reservation-list">
+                        {% for reservation in cancelled_reservations %}
+                            <div class="reservation-item">
+                                <div class="reservation-info">
+                                    <h4>{{ reservation.circuit.titre }}</h4>
+                                    <p class="client-name">{{ reservation.client.username }}</p>
+                                    <p class="reservation-date">{{ reservation.date_reservation|date:"d/m/Y" }}</p>
+                                    <p class="reservation-details">
+                                        <span><i class="fas fa-users"></i> {{ reservation.nombre_voyageurs }} voyageurs</span>
+                                        <span><i class="fas fa-money-bill"></i> {{ reservation.prix_total }} DH</span>
+                                    </p>
+                                </div>
+                                <div class="reservation-actions">
+                                    <a href="{% url 'agent_reservation_detail' reservation.pk %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="no-data">Aucune réservation annulée</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3f37c9;
+    --success-color: #4cc9f0;
+    --warning-color: #f72585;
+    --danger-color: #e63946;
+    --text-dark: #2b2d42;
+    --text-light: #8d99ae;
+    --gradient-primary: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+    --gradient-secondary: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+    --gradient-success: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+    --gradient-warning: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
+    --gradient-danger: linear-gradient(135deg, #e63946 0%, #d90429 100%);
+}
+
+.dashboard-container {
+    padding: 2rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+}
+
+/* Welcome Section */
+.welcome-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    margin: 0;
+}
+
+.date {
+    color: var(--text-light);
+    margin: 0.5rem 0 0;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.8rem 1.5rem;
+    border-radius: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    color: white;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+}
+
+.btn-secondary {
+    background: var(--gradient-secondary);
+    box-shadow: 0 4px 15px rgba(76, 201, 240, 0.3);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.1;
+    transition: all 0.3s ease;
+}
+
+.circuit-card {
+    border-left: 4px solid #4361ee;
+}
+
+.circuit-card::before {
+    background: var(--gradient-primary);
+}
+
+.reservation-card {
+    border-left: 4px solid #4cc9f0;
+}
+
+.reservation-card::before {
+    background: var(--gradient-success);
+}
+
+.client-card {
+    border-left: 4px solid #f72585;
+}
+
+.client-card::before {
+    background: var(--gradient-warning);
+}
+
+.revenue-card {
+    border-left: 4px solid #e63946;
+}
+
+.revenue-card::before {
+    background: var(--gradient-danger);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card:hover::before {
+    opacity: 0.15;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.circuit-card .stat-icon {
+    background: var(--gradient-primary);
+}
+
+.reservation-card .stat-icon {
+    background: var(--gradient-success);
+}
+
+.client-card .stat-icon {
+    background: var(--gradient-warning);
+}
+
+.revenue-card .stat-icon {
+    background: var(--gradient-danger);
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-dark);
+}
+
+.stat-content p {
+    color: var(--text-light);
+    margin: 0.5rem 0 0;
+    font-size: 1.1rem;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    padding: 1.2rem 1.5rem;
+    background: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h2 {
+    font-size: 1.2rem;
+    margin: 0;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.badge-warning {
+    background: var(--gradient-warning);
+    color: white;
+}
+
+.badge-success {
+    background: var(--gradient-success);
+    color: white;
+}
+
+.badge-danger {
+    background: var(--gradient-danger);
+    color: white;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.reservation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reservation-item {
+    background: #f8f9fa;
+    border-radius: 0.8rem;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.reservation-item:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+.reservation-info h4 {
+    font-size: 1.1rem;
+    margin: 0 0 0.5rem;
+    color: var(--text-dark);
+}
+
+.client-name {
+    color: var(--text-light);
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+}
+
+.reservation-date {
+    color: var(--text-light);
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+}
+
+.reservation-details {
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+}
+
+.reservation-details span {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.reservation-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    border-radius: 0.5rem;
+}
+
+.btn-info {
+    background: var(--gradient-secondary);
+    box-shadow: 0 2px 8px rgba(76, 201, 240, 0.3);
+}
+
+.btn-success {
+    background: var(--gradient-success);
+    box-shadow: 0 2px 8px rgba(76, 201, 240, 0.3);
+}
+
+.no-data {
+    text-align: center;
+    color: var(--text-light);
+    padding: 2rem 0;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .welcome-section {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .quick-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %} 

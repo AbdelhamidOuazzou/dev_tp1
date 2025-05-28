@@ -1,0 +1,133 @@
+{% extends 'catalogue/base.html' %}
+
+{% block title %}{{ circuit.titre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                {% if circuit.destination.image %}
+                    <img src="{{ circuit.destination.image.url }}" class="card-img-top" alt="{{ circuit.destination.nom }}">
+                {% endif %}
+                <div class="card-body">
+                    <h1 class="card-title">{{ circuit.titre }}</h1>
+                    <p class="card-text">{{ circuit.description }}</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>Détails du Circuit</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Destination:</strong> {{ circuit.destination.nom }}</li>
+                                <li><strong>Durée:</strong> {{ circuit.duree }} jours</li>
+                                <li><strong>Prix de base:</strong> {{ circuit.prix_base }} €</li>
+                                <li><strong>Places disponibles:</strong> {{ circuit.places_disponibles }}</li>
+                                <li><strong>Date de départ:</strong> {{ circuit.date_depart|date:"d/m/Y" }}</li>
+                            </ul>
+                        </div>
+                        
+                        {% if circuit.options.exists %}
+                        <div class="col-md-6">
+                            <h5>Options Supplémentaires</h5>
+                            <ul class="list-group">
+    {% for option in circuit.options.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ option.nom }}
+                                        <span class="badge bg-primary rounded-pill">{{ option.prix }} €</span>
+                                    </li>
+    {% endfor %}
+</ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Réserver ce Circuit</h4>
+                    {% if circuit.places_disponibles > 0 %}
+                        <form method="post" action="{% url 'reserver_circuit' circuit.id %}">
+                            {% csrf_token %}
+                            
+                            {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.nombre_voyageurs.id_for_label }}" class="form-label">Nombre de voyageurs</label>
+                                {{ form.nombre_voyageurs }}
+                                {% if form.nombre_voyageurs.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.nombre_voyageurs.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <small class="text-muted">Places disponibles: {{ circuit.places_disponibles }}</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.date_depart.id_for_label }}" class="form-label">Date de départ</label>
+                                {{ form.date_depart }}
+                                {% if form.date_depart.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.date_depart.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.notes.id_for_label }}" class="form-label">Notes (optionnel)</label>
+                                {{ form.notes }}
+                                {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.notes.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-check"></i> Réserver maintenant
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Désolé, ce circuit est complet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nombreVoyageursInput = document.getElementById('{{ form.nombre_voyageurs.id_for_label }}');
+    const dateDepartInput = document.getElementById('{{ form.date_depart.id_for_label }}');
+    
+    // Set min date to today
+    const today = new Date().toISOString().split('T')[0];
+    dateDepartInput.min = today;
+    
+    // Update available places when number of travelers changes
+    nombreVoyageursInput.addEventListener('change', function() {
+        const maxPlaces = {{ circuit.places_disponibles }};
+        if (this.value > maxPlaces) {
+            this.value = maxPlaces;
+        }
+    });
+});
+</script>
+{% endblock %}

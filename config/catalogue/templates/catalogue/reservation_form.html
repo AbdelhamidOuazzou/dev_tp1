@@ -1,0 +1,99 @@
+{% extends 'catalogue/admin/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">Réserver un Circuit</h2>
+                    <a href="{% url 'circuit_detail' circuit.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Retour au circuit
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="circuit-info mb-4">
+                        <h3>{{ circuit.nom }}</h3>
+                        <p class="text-muted">{{ circuit.destination.nom }}</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Date de départ:</strong> {{ circuit.date_depart }}</p>
+                                <p><strong>Durée:</strong> {{ circuit.duree }} jours</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Prix par personne:</strong> {{ circuit.prix }}€</p>
+                                <p><strong>Places disponibles:</strong> {{ circuit.places_disponibles }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.nombre_voyageurs.id_for_label }}" class="form-label">Nombre de voyageurs</label>
+                                {{ form.nombre_voyageurs }}
+                                {% if form.nombre_voyageurs.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.nombre_voyageurs.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.date_depart.id_for_label }}" class="form-label">Date de départ</label>
+                                {{ form.date_depart }}
+                                {% if form.date_depart.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.date_depart.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">Notes ou demandes spéciales</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.notes.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check"></i> Confirmer la réservation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control {
+    border-radius: 0.375rem;
+}
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+.circuit-info {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.375rem;
+}
+</style>
+{% endblock %} 

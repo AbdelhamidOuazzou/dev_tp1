@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ rapport.titre }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            @top-right {
+                content: "Page " counter(page) " sur " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2cm;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 1cm;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 24pt;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 11pt;
+            margin: 0.5cm 0 0 0;
+        }
+        
+        .info-section {
+            margin-bottom: 1cm;
+            padding: 0.5cm;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .info-section h2 {
+            color: #2c3e50;
+            font-size: 14pt;
+            margin: 0 0 0.5cm 0;
+            padding-bottom: 0.2cm;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .info-grid {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .info-row {
+            display: table-row;
+        }
+        
+        .info-label {
+            display: table-cell;
+            width: 30%;
+            padding: 0.2cm;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .info-value {
+            display: table-cell;
+            padding: 0.2cm;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.2cm 0.4cm;
+            border-radius: 3px;
+            font-size: 9pt;
+            font-weight: bold;
+        }
+        
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .badge-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .badge-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1cm 0;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: bold;
+            text-align: left;
+            padding: 0.3cm;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        td {
+            padding: 0.3cm;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .footer {
+            margin-top: 2cm;
+            padding-top: 0.5cm;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+        }
+        
+        .stats-grid {
+            display: table;
+            width: 100%;
+            margin: 1cm 0;
+        }
+        
+        .stats-row {
+            display: table-row;
+        }
+        
+        .stats-cell {
+            display: table-cell;
+            width: 33.33%;
+            padding: 0.5cm;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        
+        .stats-value {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0.2cm 0;
+        }
+        
+        .stats-label {
+            font-size: 9pt;
+            color: #666;
+        }
+        
+        .progress {
+            height: 0.3cm;
+            background-color: #e9ecef;
+            border-radius: 2px;
+            margin: 0.2cm 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 2px;
+        }
+        
+        .progress-bar-success {
+            background-color: #28a745;
+        }
+        
+        .progress-bar-warning {
+            background-color: #ffc107;
+        }
+        
+        .progress-bar-danger {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ rapport.titre }}</h1>
+        <p>Rapport généré le {{ date_export|date:"d/m/Y à H:i" }}</p>
+    </div>
+
+    <div class="info-section">
+        <h2>Informations du Rapport</h2>
+        <div class="info-grid">
+            <div class="info-row">
+                <div class="info-label">Type de Rapport</div>
+                <div class="info-value">
+                    <span class="badge {% if rapport.type == 'ventes' %}badge-success
+                                     {% elif rapport.type == 'occupation' %}badge-info
+                                     {% else %}badge-warning{% endif %}">
+                        {{ rapport.get_type_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Période</div>
+                <div class="info-value">
+                    Du {{ rapport.date_debut|date:"d/m/Y" }} au {{ rapport.date_fin|date:"d/m/Y" }}
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Créé par</div>
+                <div class="info-value">{{ rapport.cree_par.get_full_name }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Date de création</div>
+                <div class="info-value">{{ rapport.date_creation|date:"d/m/Y à H:i" }}</div>
+            </div>
+            {% if rapport.description %}
+            <div class="info-row">
+                <div class="info-label">Description</div>
+                <div class="info-value">{{ rapport.description }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2>Données du Rapport</h2>
+        
+        {% if rapport.type == 'ventes' %}
+            <!-- Sales Report -->
+            <div class="stats-grid">
+                <div class="stats-row">
+                    <div class="stats-cell">
+                        <div class="stats-value">{{ rapport.donnees.total_sales|floatformat:2 }} DH</div>
+                        <div class="stats-label">Total des Ventes</div>
+                    </div>
+                    <div class="stats-cell">
+                        <div class="stats-value">{{ rapport.donnees.total_reservations }}</div>
+                        <div class="stats-label">Nombre de Réservations</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Ventes par Circuit</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Circuit</th>
+                        <th>Ventes</th>
+                        <th>Réservations</th>
+                        <th>Prix Moyen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for circuit in rapport.donnees.sales_by_circuit %}
+                    <tr>
+                        <td>{{ circuit.circuit__titre }}</td>
+                        <td>{{ circuit.total_sales|floatformat:2 }} DH</td>
+                        <td>{{ circuit.reservation_count }}</td>
+                        <td>{{ circuit.avg_price|floatformat:2 }} DH</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        {% elif rapport.type == 'occupation' %}
+            <!-- Occupancy Report -->
+            <div class="stats-grid">
+                <div class="stats-row">
+                    <div class="stats-cell">
+                        <div class="stats-value">{{ rapport.donnees.overall_occupancy_rate|floatformat:1 }}%</div>
+                        <div class="stats-label">Taux d'Occupation Moyen</div>
+                    </div>
+                    <div class="stats-cell">
+                        <div class="stats-value">{{ rapport.donnees.total_places }}</div>
+                        <div class="stats-label">Places Totales</div>
+                    </div>
+                    <div class="stats-cell">
+                        <div class="stats-value">{{ rapport.donnees.total_reserved }}</div>
+                        <div class="stats-label">Places Réservées</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Détails d'Occupation par Circuit</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Circuit</th>
+                        <th>Places Totales</th>
+                        <th>Places Réservées</th>
+                        <th>Taux d'Occupation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for circuit in rapport.donnees.occupancy_by_circuit %}
+                    <tr>
+                        <td>{{ circuit.circuit__titre }}</td>
+                        <td>{{ circuit.total_places }}</td>
+                        <td>{{ circuit.total_reserved }}</td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar {% if circuit.occupancy_rate >= 80 %}progress-bar-success
+                                                       {% elif circuit.occupancy_rate >= 50 %}progress-bar-warning
+                                                       {% else %}progress-bar-danger{% endif %}"
+                                     style="width: {{ circuit.occupancy_rate }}%">
+                                </div>
+                            </div>
+                            {{ circuit.occupancy_rate|floatformat:1 }}%
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        {% elif rapport.type == 'clients' %}
+            <!-- Clients Report -->
+            <h3>Top Clients</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Total Dépensé</th>
+                        <th>Réservations</th>
+                        <th>Moyenne</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in rapport.donnees.client_stats %}
+                    <tr>
+                        <td>{{ client.client__username }}</td>
+                        <td>{{ client.total_spent|floatformat:2 }} DH</td>
+                        <td>{{ client.reservation_count }}</td>
+                        <td>{{ client.avg_spent|floatformat:2 }} DH</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <p>Ce rapport a été généré automatiquement par le système de gestion de voyages.</p>
+    </div>
+</body>
+</html> 
