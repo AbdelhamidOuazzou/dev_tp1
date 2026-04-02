@@ -1,12 +1,14 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Login from './features/auth/Login';
+//import Login from './features/auth/Login';
 import Dashboard from './pages/Dashboard';
 import ProjectDetail from './pages/ProjectDetail';
 import ProtectedRoute from './components/ProtectedRoute';
+import LoginMUI from "./features/auth/LoginMUI.tsx";
+import LoginBS from "./features/auth/LoginBS.tsx";
 export default function App() {
     return (
         <Routes>
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<LoginBS />} />
             <Route path="/dashboard" element={
                 <ProtectedRoute><Dashboard /></ProtectedRoute>
             } />

@@ -7,20 +7,24 @@ import MainContent from '../components/MainContent';
 import ProjectForm from '../components/ProjectForm';
 import styles from './Dashboard.module.css';
 import axios from 'axios';
-// eslint-disable-next-line react-hooks/rules-of-hooks
-const [error, setError] = useState<string | null>(null);
-// eslint-disable-next-line react-hooks/rules-of-hooks
-const [saving, setSaving] = useState(false);
+import HeaderMUI from "../components/HeaderMUI";
+import LoginBS from "./features/auth/LoginBS.tsx";
+
 interface Project { id: string; name: string; color: string; }
 interface Column { id: string; title: string; tasks: string[]; }
+
 export default function Dashboard() {
+    // 1. TOUS LES HOOKS SONT MAINTENANT À L'INTÉRIEUR DU COMPOSANT
     const { state: authState, dispatch } = useAuth();
+    const [error, setError] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [projects, setProjects] = useState<Project[]>([]);
     const [columns, setColumns] = useState<Column[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
-// GET — charger les données au montage
+
+    // GET — charger les données au montage
     useEffect(() => {
         async function fetchData() {
             try {
@@ -30,11 +34,16 @@ export default function Dashboard() {
                 ]);
                 setProjects(projRes.data);
                 setColumns(colRes.data);
-            } catch (e) { console.error(e); }finally { setLoading(false); }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
         }
         fetchData();
     }, []);
-// POST — ajouter un projet
+
+    // POST — ajouter un projet
     async function addProject(name: string, color: string) {
         setSaving(true);
         setError(null);
@@ -51,27 +60,28 @@ export default function Dashboard() {
             setSaving(false);
         }
     }
-// PUT — renommer un projet
-// À VOUS D'ÉCRIRE (voir specs ci-dessous)
-    async function renameProject(project:Project) {
+
+    // PUT — renommer un projet
+    async function renameProject(project: Project) {
         const nouveauNom = prompt('NewName', project.name);
-        if(nouveauNom && nouveauNom!=project.name){
-            const {data} = await api.put(`/projects/${project.id}`+{...project,name:nouveauNom});
-            setProjects((pr)=> pr.map((p)=>(p.id === project.id ? data : p)))
+        if (nouveauNom && nouveauNom !== project.name) {
+            // CORRECTION ICI : virgule au lieu du signe +
+            const { data } = await api.put(`/projects/${project.id}`, { ...project, name: nouveauNom });
+            setProjects((pr) => pr.map((p) => (p.id === project.id ? data : p)));
         }
-
     }
-// DELETE — supprimer un projet
-// À VOUS D'ÉCRIRE (voir specs ci-dessous)
-    async function deleteProject(id :string) {
+
+    // DELETE — supprimer un projet
+    async function deleteProject(id: string) {
         await api.delete(`/projects/${id}`);
-
-        setProjects(prev => prev.filter((p)=>p.id !== id));
+        setProjects(prev => prev.filter((p) => p.id !== id));
     }
+
     if (loading) return <div className={styles.loading}>Chargement...</div>;
+
     return (
         <div className={styles.layout}>
-            <Header
+            <HeaderMUI
                 title="TaskFlow"
                 onMenuClick={() => setSidebarOpen(p => !p)}
                 userName={authState.user?.name}
@@ -82,8 +92,7 @@ export default function Dashboard() {
                 <div className={styles.content}>
                     <div className={styles.toolbar}>
                         {!showForm ? (
-                            <button className={styles.addBtn}
-                                    onClick={() => setShowForm(true)}>
+                            <button className={styles.addBtn} onClick={() => setShowForm(true)}>
                                 + Nouveau projet
                             </button>
                         ) : (
@@ -97,6 +106,11 @@ export default function Dashboard() {
                             />
                         )}
                     </div>
+
+                    {/* Affichage d'erreur potentiel pour l'ajout de projet */}
+                    {error && <div style={{ color: 'red', margin: '10px 0' }}>{error}</div>}
+                    {saving && <div style={{ color: 'blue', margin: '10px 0' }}>Sauvegarde en cours...</div>}
+
                     <MainContent columns={columns} />
                 </div>
             </div>

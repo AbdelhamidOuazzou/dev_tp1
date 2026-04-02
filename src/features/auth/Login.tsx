@@ -12,9 +12,11 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const from = (location.state as { from?: string })?.from || '/dashboard';
+
     useEffect(() => {
         if (state.user) navigate(from, { replace: true })
     }, [state.user, navigate, from]);
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         dispatch({ type: 'LOGIN_START' });
