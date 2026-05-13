@@ -1,82 +1,37 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../features/auth/AuthContext';
-import api from '../api/axios';
+import { useState, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import type {RootState} from '../store';
+import { logout } from '../features/auth/authSlice';
+import { setAuthToken } from '../api/axios';
+import useProjects from '../hooks/useProjects';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import MainContent from '../components/MainContent';
 import ProjectForm from '../components/ProjectForm';
 import styles from './Dashboard.module.css';
-import axios from 'axios';
-// eslint-disable-next-line react-hooks/rules-of-hooks
-const [error, setError] = useState<string | null>(null);
-// eslint-disable-next-line react-hooks/rules-of-hooks
-const [saving, setSaving] = useState(false);
-interface Project { id: string; name: string; color: string; }
-interface Column { id: string; title: string; tasks: string[]; }
+
 export default function Dashboard() {
-    const { state: authState, dispatch } = useAuth();
+    const user = useSelector((state: RootState) => state.auth.user);
+    const dispatch = useDispatch();
+    const { projects, columns, loading, error, addProject } = useProjects();
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [columns, setColumns] = useState<Column[]>([]);
-    const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
-// GET — charger les données au montage
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                const [projRes, colRes] = await Promise.all([
-                    api.get('/projects'),
-                    api.get('/columns'),
-                ]);
-                setProjects(projRes.data);
-                setColumns(colRes.data);
-            } catch (e) { console.error(e); }finally { setLoading(false); }
-        }
-        fetchData();
-    }, []);
-// POST — ajouter un projet
-    async function addProject(name: string, color: string) {
-        setSaving(true);
-        setError(null);
-        try {
-            const { data } = await api.post('/projects', { name, color });
-            setProjects(prev => [...prev, data]);
-        } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setError(err.response?.data?.message || `Erreur ${err.response?.status}`);
-            } else {
-                setError('Erreur inconnue');
-            }
-        } finally {
-            setSaving(false);
-        }
-    }
-// PUT — renommer un projet
-// À VOUS D'ÉCRIRE (voir specs ci-dessous)
-    async function renameProject(project:Project) {
-        const nouveauNom = prompt('NewName', project.name);
-        if(nouveauNom && nouveauNom!=project.name){
-            const {data} = await api.put(`/projects/${project.id}`+{...project,name:nouveauNom});
-            setProjects((pr)=> pr.map((p)=>(p.id === project.id ? data : p)))
-        }
 
-    }
-// DELETE — supprimer un projet
-// À VOUS D'ÉCRIRE (voir specs ci-dessous)
-    async function deleteProject(id :string) {
-        await api.delete(`/projects/${id}`);
+    const handleLogout = useCallback(() => {
+        dispatch(logout());
+        setAuthToken(null);
+    }, [dispatch]);
 
-        setProjects(prev => prev.filter((p)=>p.id !== id));
-    }
     if (loading) return <div className={styles.loading}>Chargement...</div>;
     return (
         <div className={styles.layout}>
             <Header
                 title="TaskFlow"
                 onMenuClick={() => setSidebarOpen(p => !p)}
-                userName={authState.user?.name}
-                onLogout={() => dispatch({ type: 'LOGOUT' })}
+                userName={user?.name}
+                onLogout={handleLogout}
             />
+            {error && <div className={styles.error}>{error}</div>}
             <div className={styles.body}>
                 <Sidebar projects={projects} isOpen={sidebarOpen} />
                 <div className={styles.content}>

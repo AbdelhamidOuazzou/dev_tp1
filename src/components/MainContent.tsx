@@ -1,7 +1,10 @@
 import styles from './MainContent.module.css';
+import { memo } from 'react';
+
 interface Column { id: string; title: string; tasks: string[]; }
 interface MainContentProps { columns: Column[]; }
-export default function MainContent({ columns }: MainContentProps) {
+
+function MainContent({ columns }: MainContentProps) {
     return (<main className={styles.main}>
             <div className={styles.board}>
                 {columns.map(col => (
@@ -16,3 +19,5 @@ export default function MainContent({ columns }: MainContentProps) {
         </main>
     );
 }
+
+export default memo(MainContent);
